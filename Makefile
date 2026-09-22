@@ -49,12 +49,18 @@ ci: lint test  ## Equivalente local del pipeline CI
 docker-build:  ## Construye la imagen
 	docker compose build
 
-up:  ## Levanta el stack
+up:  ## Levanta el stack (Docker)
 	docker compose up -d
 	@echo "API: http://localhost:8000"
 
-down:  ## Detiene el stack
+down:  ## Detiene el stack (Docker)
 	docker compose down
+
+local-up:  ## Despliega en local con un solo comando (venv + deps + server, modo demo)
+	./scripts/deploy_local.sh
+
+local-down:  ## Detiene el servidor levantado por local-up
+	./scripts/deploy_local.sh --stop
 
 logs:  ## Sigue los logs
 	docker compose logs -f api
