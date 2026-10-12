@@ -1,0 +1,35 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "${TEAMS_BOT_APP_ID}",
+  "developer": {
+    "name": "${TEAMS_APP_DEVELOPER}",
+    "websiteUrl": "${TEAMS_APP_WEBSITE}",
+    "privacyUrl": "${TEAMS_APP_WEBSITE}/privacidad",
+    "termsOfUseUrl": "${TEAMS_APP_WEBSITE}/terminos"
+  },
+  "name": {
+    "short": "Help Desk IA",
+    "full": "Help Desk Multiagente"
+  },
+  "description": {
+    "short": "Aprobaciones del Help Desk Multiagente.",
+    "full": "Recibe en Teams las solicitudes de aprobación del asistente de Help Desk (hardware, licencias) y apruébalas o recházalas desde la tarjeta."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#2F5597",
+  "bots": [
+    {
+      "botId": "${TEAMS_BOT_APP_ID}",
+      "scopes": ["personal"],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": []
+}

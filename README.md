@@ -70,6 +70,15 @@ El backend expone un **endpoint compatible con OpenAI** en `http://localhost:800
 
 > Jan también puede ejecutar el LLM localmente (servidor `localhost:1337`) y este sistema lo usa como proveedor de razonamiento para los agentes.
 
+## ☁️ Google Cloud y Microsoft Teams (Fase 2)
+
+En curso en la rama `feature/integracion-google-cloud` ([plan incremental](docs/PLAN_FASE2_GOOGLE_CLOUD.md)):
+
+- **Vertex AI (Gemini)** como LLM: `LLM_PROVIDER=vertex`, sin API key (credenciales de Google Cloud).
+- **Cloud Run** + Artifact Registry + Secret Manager + Firestore + Cloud Logging/BigQuery, con Terraform en [infra/terraform/](infra/terraform/) y despliegue desde GitHub Actions. Guía: [docs/DESPLIEGUE_GCP.md](docs/DESPLIEGUE_GCP.md).
+- **Microsoft Teams** en lugar de Slack: aprobaciones interactivas que reanudan la conversación. Guía: [docs/integraciones/TEAMS.md](docs/integraciones/TEAMS.md).
+- **ServiceTonic** sustituirá a ServiceNow cuando se cubran sus [requerimientos](docs/integraciones/SERVICETONIC_REQUERIMIENTOS.md); mientras tanto el sistema sigue usando ServiceNow.
+
 ## 🔐 Seguridad (Fase 0)
 
 Todos los endpoints salvo `GET /api/health` exigen una credencial. Sin
@@ -175,6 +184,8 @@ servicenow-multiagent/
 | `POST /api/chat` | user |
 | `GET /api/conversations`, `GET /api/conversations/{id}` | agent |
 | `POST /api/escalate` | agent |
+| `GET /api/approvals`, `POST /api/approvals/{id}/decision` | agent |
+| `POST /api/teams/messages` (bot de Teams) | JWT de Bot Framework |
 | `GET /api/test-matrix/targets`, `POST /api/test-matrix` (HU-004) | agent |
 | `GET /api/dashboard` | agent |
 | `GET /api/dashboard/events` | admin |
