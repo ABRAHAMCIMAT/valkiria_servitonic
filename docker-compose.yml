@@ -27,13 +27,25 @@ services:
       LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:1337/v1}
       LLM_MODEL: ${LLM_MODEL:-gpt-oss:latest}
       LLM_API_KEY: ${LLM_API_KEY:-}
+      # --- Google Cloud (Fase 2) ---
+      GCP_PROJECT: ${GCP_PROJECT:-}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-us-central1}
+      VERTEX_MODEL: ${VERTEX_MODEL:-google/gemini-2.5-flash}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-file}
+      APPROVAL_TTL_HOURS: ${APPROVAL_TTL_HOURS:-72}
+      TICKETING_PROVIDER: ${TICKETING_PROVIDER:-servicenow}
       # --- ServiceNow ---
       SNOW_INSTANCE: ${SNOW_INSTANCE:-}
       SNOW_USER: ${SNOW_USER:-}
       SNOW_PASSWORD: ${SNOW_PASSWORD:-}
       SNOW_TOKEN: ${SNOW_TOKEN:-}
       # --- Notificaciones ---
-      NOTIFY_CHANNEL: ${NOTIFY_CHANNEL:-slack}
+      NOTIFY_CHANNEL: ${NOTIFY_CHANNEL:-teams}
+      TEAMS_BOT_APP_ID: ${TEAMS_BOT_APP_ID:-}
+      TEAMS_BOT_APP_PASSWORD: ${TEAMS_BOT_APP_PASSWORD:-}
+      TEAMS_TENANT_ID: ${TEAMS_TENANT_ID:-}
+      TEAMS_SERVICE_URL: ${TEAMS_SERVICE_URL:-https://smba.trafficmanager.net/teams/}
+      TEAMS_WORKFLOW_URL: ${TEAMS_WORKFLOW_URL:-}
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
       TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL:-}
       WHATSAPP_API_URL: ${WHATSAPP_API_URL:-}

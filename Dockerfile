@@ -27,10 +27,10 @@ RUN groupadd --system --gid 1001 lindy \
 
 WORKDIR /app
 
-COPY --from=builder /wheels /wheels
+# Los wheels se montan desde el builder en vez de copiarse: una capa COPY
+# los dejaria en la imagen aunque despues se borren (~25 MB)
 COPY requirements.txt .
-RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt \
- && rm -rf /wheels
+RUN --mount=type=bind,from=builder,source=/wheels,target=/wheels pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt
 
 COPY --chown=lindy:lindy backend/ ./backend/
 COPY --chown=lindy:lindy frontend/ ./frontend/

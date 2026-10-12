@@ -3,7 +3,7 @@ PY := python3
 PIP := $(PY) -m pip
 
 .PHONY: help install dev test test-unit test-int test-e2e cov lint fmt typecheck \
-        security ci docker-build up down logs clean
+        security ci docker-build up down logs clean gcp-init gcp-plan gcp-apply teams-app
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -61,6 +61,22 @@ local-up:  ## Despliega en local con un solo comando (venv + deps + server, modo
 
 local-down:  ## Detiene el servidor levantado por local-up
 	./scripts/deploy_local.sh --stop
+
+# --- Google Cloud (Fase 2). ENV=dev|prod; ver docs/DESPLIEGUE_GCP.md ---
+ENV ?= dev
+TF := terraform -chdir=infra/terraform
+
+gcp-init:  ## Terraform init con el estado remoto del entorno (ENV=dev|prod)
+	$(TF) init -reconfigure -backend-config=envs/$(ENV).backend.hcl
+
+gcp-plan:  ## Terraform plan del entorno (ENV=dev|prod)
+	$(TF) plan -var-file=envs/$(ENV).tfvars -out=$(ENV).tfplan
+
+gcp-apply:  ## Aplica el plan generado por gcp-plan
+	$(TF) apply $(ENV).tfplan
+
+teams-app:  ## Empaqueta la app de Teams (requiere TEAMS_BOT_APP_ID, TEAMS_APP_DEVELOPER, TEAMS_APP_WEBSITE)
+	./scripts/package_teams_app.sh
 
 logs:  ## Sigue los logs
 	docker compose logs -f api

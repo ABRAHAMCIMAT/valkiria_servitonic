@@ -1,0 +1,102 @@
+name: Desplegar en Google Cloud
+
+# Fase 2 (I3). dev: tras cada CI en verde de main. prod: al publicar un tag
+# vX.Y.Z (protegido por el environment "prod" de GitHub con aprobación manual).
+#
+# Variables de cada environment de GitHub (Settings → Environments):
+#   GCP_PROJECT_ID, GCP_REGION, GCP_WIF_PROVIDER, GCP_DEPLOYER_SA, CLOUD_RUN_SERVICE
+# Los valores salen de `terraform output` (ver docs/DESPLIEGUE_GCP.md).
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Entorno"
+        type: choice
+        options: [dev, prod]
+        default: dev
+
+concurrency:
+  group: deploy-gcp-${{ github.event.inputs.environment || (github.event_name == 'push' && 'prod') || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # token OIDC para Workload Identity Federation
+
+jobs:
+  deploy:
+    name: Cloud Run (${{ github.event.inputs.environment || (github.event_name == 'push' && 'prod') || 'dev' }})
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.event_name == 'push' && 'prod') || 'dev' }}
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      REGION: ${{ vars.GCP_REGION }}
+      SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/snow-multiagent/api
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - name: Autenticar en Google Cloud (sin llaves JSON)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build y push a Artifact Registry
+        run: |
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "${IMAGE}:${SHA}" .
+          docker push "${IMAGE}:${SHA}"
+
+      - name: Desplegar revisión sin tráfico
+        id: deploy
+        run: |
+          TAG="c-${SHA:0:12}"
+          gcloud run deploy "$SERVICE" \
+            --image "${IMAGE}:${SHA}" \
+            --region "$REGION" \
+            --no-traffic \
+            --tag "$TAG" \
+            --quiet
+          URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json \
+            | jq -r --arg t "$TAG" '.status.traffic[] | select(.tag == $t) | .url')
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test de la revisión candidata
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          for _ in $(seq 1 10); do
+            if curl -fsS --max-time 10 "$URL/api/health"; then exit 0; fi
+            sleep 6
+          done
+          echo "::error::La revisión candidata no respondió en /api/health"
+          exit 1
+
+      - name: Mover el tráfico a la revisión nueva
+        run: |
+          gcloud run services update-traffic "$SERVICE" \
+            --region "$REGION" \
+            --to-tags "${{ steps.deploy.outputs.tag }}=100" \
+            --quiet
+
+      - name: Resumen
+        run: |
+          {
+            echo "### Desplegado en Cloud Run"
+            echo "- Imagen: \`${IMAGE}:${SHA}\`"
+            echo "- Revisión: \`${{ steps.deploy.outputs.tag }}\`"
+            echo "- Rollback: \`gcloud run services update-traffic $SERVICE --region $REGION --to-revisions=<anterior>=100\`"
+          } >> "$GITHUB_STEP_SUMMARY"
