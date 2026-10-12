@@ -48,16 +48,27 @@ class Classification:
     summary: str = ""
     raw: dict = field(default_factory=dict)
 
+    @classmethod
+    def from_dict(cls, d: dict) -> Classification:
+        fields_ = {k: v for k, v in d.items() if k in cls.__dataclass_fields__}
+        if "intent" in fields_:
+            fields_["intent"] = Intent(fields_["intent"])
+        if "priority" in fields_:
+            fields_["priority"] = Priority(fields_["priority"])
+        return cls(**fields_)
+
 
 @dataclass
 class Ticket:
-    """A ServiceNow incident / request record."""
+    """A ticketing-system incident / request record (ServiceNow hoy)."""
 
     number: str = ""
     short_description: str = ""
     description: str = ""
     state: str = "New"
     priority: Priority = Priority.P4
+    impact: int = 3
+    urgency: int = 3
     category: str = ""
     subcategory: str = ""
     assignment_group: str = ""
@@ -83,6 +94,8 @@ class Ticket:
             "description": self.description,
             "state": self.state,
             "priority": self.priority.value if isinstance(self.priority, Priority) else self.priority,
+            "impact": self.impact,
+            "urgency": self.urgency,
             "category": self.category,
             "subcategory": self.subcategory,
             "assignment_group": self.assignment_group,
@@ -94,6 +107,17 @@ class Ticket:
             "work_notes": self.work_notes,
             "metadata": self.metadata,
         }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> Ticket:
+        fields_ = {k: v for k, v in d.items() if k in cls.__dataclass_fields__}
+        if fields_.get("priority") in Priority._value2member_map_:
+            fields_["priority"] = Priority(fields_["priority"])
+        ticket = cls(**fields_)
+        # __post_init__ sella updated_at con la hora actual; se respeta el original
+        if d.get("updated_at"):
+            ticket.updated_at = d["updated_at"]
+        return ticket
 
 
 @dataclass
@@ -115,6 +139,10 @@ class AgentMessage:
             "timestamp": self.timestamp,
         }
 
+    @classmethod
+    def from_dict(cls, d: dict) -> AgentMessage:
+        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+
 
 @dataclass
 class Conversation:
@@ -125,7 +153,9 @@ class Conversation:
     classification: Classification | None = None
     ticket: Ticket | None = None
     messages: list[AgentMessage] = field(default_factory=list)
-    status: str = "in_progress"  # in_progress | resolved | escalated | awaiting_approval
+    # in_progress | resolved | escalated | awaiting_approval | rejected
+    status: str = "in_progress"
+    caller: str = ""
     created_at: str = field(default_factory=now_iso)
 
     def add(
@@ -143,5 +173,22 @@ class Conversation:
             "ticket": self.ticket.to_dict() if self.ticket else None,
             "messages": [m.to_dict() for m in self.messages],
             "status": self.status,
+            "caller": self.caller,
             "created_at": self.created_at,
         }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> Conversation:
+        """Inverso de to_dict(): lo usan los backends de almacenamiento
+        persistente (p. ej. Firestore) para reconstruir la conversación."""
+        cl = d.get("classification")
+        return cls(
+            id=d["id"],
+            user_message=d.get("user_message", ""),
+            classification=Classification.from_dict(cl) if cl else None,
+            ticket=Ticket.from_dict(d["ticket"]) if d.get("ticket") else None,
+            messages=[AgentMessage.from_dict(m) for m in d.get("messages", [])],
+            status=d.get("status", "in_progress"),
+            caller=d.get("caller", ""),
+            created_at=d.get("created_at") or now_iso(),
+        )

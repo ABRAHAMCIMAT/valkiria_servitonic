@@ -31,6 +31,8 @@ class JsonFormatter(logging.Formatter):
         entry = {
             "ts": datetime.now(UTC).isoformat(),
             "level": record.levelname,
+            # Cloud Logging toma la severidad de este campo (Fase 2)
+            "severity": "WARNING" if record.levelname == "WARN" else record.levelname,
             "logger": record.name,
             # Fase 0: redaccion de PII en el origen (defensa en profundidad)
             "message": redact_text(record.getMessage()),

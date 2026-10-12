@@ -4,7 +4,9 @@ LLM abstraction layer.
 The multi-agent system is model-agnostic. It can run against:
   1. Jan's local OpenAI-compatible server (http://localhost:1337/v1) — default
   2. Any OpenAI-compatible endpoint (OpenAI, Azure, Groq, Ollama, LM Studio...)
-  3. A deterministic "mock" provider for demos / CI without any model running
+  3. Google Vertex AI (Gemini) via its OpenAI-compatible endpoint, with
+     short-lived Google Cloud tokens instead of an API key (Fase 2, I2)
+  4. A deterministic "mock" provider for demos / CI without any model running
 
 Every agent talks to the LLM through this single interface so the whole
 orchestration can be pointed at Jan (or any provider) with one env var.
@@ -15,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -23,13 +26,22 @@ import httpx
 from ..llmops.errors import ProviderError, RetryableError, retry
 from ..llmops.patterns import Strategy
 
-
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+VERTEX_DEFAULT_MODEL = "google/gemini-2.5-flash"
+
+
+def vertex_base_url(project: str, location: str) -> str:
+    """Endpoint compatible con OpenAI de Vertex AI. La ubicación `global`
+    no lleva prefijo regional en el host."""
+    host = "aiplatform.googleapis.com" if location == "global" else f"{location}-aiplatform.googleapis.com"
+    return f"https://{host}/v1/projects/{project}/locations/{location}/endpoints/openapi"
+
+
 @dataclass
 class LLMConfig:
-    provider: str = "jan"  # jan | openai | mock
+    provider: str = "jan"  # jan | openai | vertex | mock
     base_url: str = "http://localhost:1337/v1"
     api_key: str = ""  # Fase 0: sin valor por defecto; Jan ignora la clave
     model: str = "gpt-oss:latest"  # Jan default model; override per provider
@@ -49,6 +61,21 @@ class LLMConfig:
             # Fase 0: fail-fast si falta la clave de OpenAI
             if not api_key:
                 raise RuntimeError("LLM_API_KEY es obligatoria para el proveedor 'openai'.")
+        if provider == "vertex":
+            # Sin API key: la autenticación es ADC (ver core/gcp_auth.py)
+            project = os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT", "")
+            if not project:
+                from .gcp_auth import default_project
+
+                project = default_project()
+            if not project:
+                raise RuntimeError("GCP_PROJECT es obligatoria para el proveedor 'vertex'.")
+            location = os.getenv("VERTEX_LOCATION", "us-central1")
+            # Variables propias (no LLM_BASE_URL/LLM_MODEL): docker-compose
+            # siempre define estas últimas con los valores de Jan.
+            base_url = os.getenv("VERTEX_BASE_URL") or vertex_base_url(project, location)
+            model = os.getenv("VERTEX_MODEL") or VERTEX_DEFAULT_MODEL
+            api_key = ""
         return cls(provider=provider, base_url=base_url, api_key=api_key, model=model)
 
 
@@ -279,9 +306,16 @@ class MockLLM:
 # Real provider (Jan / OpenAI-compatible)
 # ---------------------------------------------------------------------------
 class OpenAICompatLLM:
-    def __init__(self, config: LLMConfig):
+    def __init__(self, config: LLMConfig, token_provider: Callable[[], str] | None = None):
         self.config = config
+        # Vertex AI: token de Google renovado en cada llamada (expira a la hora);
+        # el resto de proveedores usa la API key estática.
+        self._token_provider = token_provider
         self._client = httpx.Client(timeout=config.timeout)
+
+    def _auth_header(self) -> dict:
+        token = self._token_provider() if self._token_provider else self.config.api_key
+        return {"Authorization": f"Bearer {token}"}
 
     def complete(self, messages, **kw) -> str:
         payload = {
@@ -296,7 +330,7 @@ class OpenAICompatLLM:
         def _post():
             resp = self._client.post(
                 f"{self.config.base_url}/chat/completions",
-                headers={"Authorization": f"Bearer {self.config.api_key}"},
+                headers=self._auth_header(),
                 json=payload,
             )
             try:
@@ -310,9 +344,17 @@ class OpenAICompatLLM:
                 # solicitud" de un bug propio (ver llmops/errors.py).
                 raise ProviderError(f"El proveedor LLM devolvió {e.response.status_code}") from e
             try:
-                return resp.json()["choices"][0]["message"]["content"]
-            except (ValueError, KeyError, IndexError) as e:
+                choice = resp.json()["choices"][0]
+                content = choice["message"].get("content")
+            except (ValueError, KeyError, IndexError, AttributeError) as e:
                 raise ProviderError(f"Respuesta del proveedor LLM con formato inesperado: {e}") from e
+            if content is None:
+                # Gemini devuelve contenido vacío cuando sus filtros de
+                # seguridad bloquean la respuesta (finish_reason distinto de stop)
+                raise ProviderError(
+                    f"El proveedor LLM no devolvió contenido (finish_reason={choice.get('finish_reason')})"
+                )
+            return str(content)
 
         # Fase 0: retry() con backoff exponencial + jitter (antes definido y no usado)
         return retry(
@@ -331,10 +373,19 @@ _provider_strategy.register("mock", lambda config: MockLLM(config))
 _provider_strategy.register("openai_compat", lambda config: OpenAICompatLLM(config))
 
 
+def _vertex_llm(config: LLMConfig) -> OpenAICompatLLM:
+    from .gcp_auth import GoogleTokenProvider
+
+    return OpenAICompatLLM(config, token_provider=GoogleTokenProvider().token)
+
+
+_provider_strategy.register("vertex", _vertex_llm)
+
+
 class LLM:
     def __init__(self, config: LLMConfig | None = None):
         self.config = config or LLMConfig.from_env()
-        key = "mock" if self.config.provider == "mock" else "openai_compat"
+        key = self.config.provider if self.config.provider in ("mock", "vertex") else "openai_compat"
         self._impl: MockLLM | OpenAICompatLLM = _provider_strategy.execute(key, self.config)
 
     def chat(self, system: str, user: str, json_mode: bool = False, **kw) -> str:

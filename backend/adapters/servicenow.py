@@ -194,6 +194,31 @@ class ServiceNowAdapter:
             )
         return self._tickets.get(number)
 
+    def list_tickets(self, caller: str, limit: int = 5) -> list[Ticket]:
+        """Tickets más recientes del solicitante (primero el más nuevo)."""
+        if self.live:
+            r = self._request(
+                "GET",
+                self._url("table/incident"),
+                params={
+                    "sysparm_query": f"caller_id.name={caller}^ORDERBYDESCsys_updated_on",
+                    "sysparm_limit": str(limit),
+                },
+            )
+            return [
+                Ticket(
+                    number=d.get("number"),
+                    short_description=d.get("short_description"),
+                    state=d.get("state"),
+                    category=d.get("category"),
+                    assignment_group=d.get("assignment_group"),
+                    caller=caller,
+                )
+                for d in r.json()["result"]
+            ]
+        mine = [t for t in self._tickets.values() if t.caller == caller]
+        return list(reversed(mine))[:limit]
+
     # -- knowledge base (RAG) ----------------------------------------------
     def search_kb(self, query: str, top_k: int = 3) -> list[dict]:
         """Simple keyword/embedding-free retrieval. Swap for real vector search."""

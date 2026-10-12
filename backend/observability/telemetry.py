@@ -14,12 +14,14 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import sys
 import time
 import uuid
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
 
+from .. import config
 from ..config import TELEMETRY_LOG
 from ..security.redaction import redact_text
 
@@ -84,6 +86,16 @@ class Telemetry:
         max_events = int(os.getenv("TELEMETRY_MAX_EVENTS", "5000"))
         if len(self._events) > max_events:
             del self._events[: len(self._events) - max_events]
+        if config.STRUCTURED_STDOUT:
+            # Cloud Logging → sink a BigQuery (log_type="telemetry")
+            with contextlib.suppress(Exception):
+                line = {
+                    "severity": "INFO",
+                    "log_type": "telemetry",
+                    "message": event.get("type", ""),
+                    **event,
+                }
+                sys.stdout.write(json.dumps(line, ensure_ascii=False, default=str) + "\n")
         if self.log_path:
             with contextlib.suppress(Exception):
                 os.makedirs(os.path.dirname(self.log_path), exist_ok=True)

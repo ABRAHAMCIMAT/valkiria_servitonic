@@ -8,8 +8,10 @@ append-only; la rotacion se gestiona fuera del proceso (logrotate).
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import sys
 import threading
 from datetime import UTC, datetime
 
@@ -36,6 +38,15 @@ class AuditLog:
             "outcome": outcome,
             "metadata": metadata or {},
         }
+        from .. import config
+
+        if config.STRUCTURED_STDOUT:
+            # Cloud Logging: un sink filtra log_type="audit" hacia un bucket
+            # con retencion larga (infra/terraform/logging.tf)
+            with contextlib.suppress(Exception):
+                line = {"severity": "NOTICE", "log_type": "audit", "message": f"audit {action}", **entry}
+                sys.stdout.write(json.dumps(line, ensure_ascii=False) + "\n")
+                sys.stdout.flush()
         if not self.path:
             return
         with _lock:

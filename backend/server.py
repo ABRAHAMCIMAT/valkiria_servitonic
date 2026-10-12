@@ -22,19 +22,24 @@ import json
 import os
 import uuid
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import config
-from .adapters.notifications import NotificationAdapter
-from .adapters.servicenow import ServiceNowAdapter
+from .adapters import teams_cards
+from .adapters.factory import (
+    build_approval_store,
+    build_conversation_store,
+    build_notifier,
+    build_ticketing,
+)
 from .agents.coordinator import CoordinatorAgent
 from .agents.escalation import EscalationAgent
+from .core.approvals import DECISIONS, EXPIRED, ApprovalRequest, ApprovalStorage
 from .core.llm import LLM
-from .core.state import ConversationStore
 from .core.storage import ConversationStorage
 from .llmops.errors import AgentError, LLMOpsError, ProviderError, ValidationError
 from .llmops.guardrails import default_guardrails
@@ -55,6 +60,7 @@ from .security import (
     require_auth,
     require_role,
 )
+from .security.botframework import BotFrameworkAuth
 
 app = FastAPI(title="ServiceNow Multi-Agent System", version="2.2.0")
 
@@ -106,14 +112,20 @@ async def llmops_error_handler(request: Request, exc: LLMOpsError):
 
 
 # --- singletons ------------------------------------------------------------
+# Fase 2: las clases concretas las elige adapters/factory.py por variable de
+# entorno (TICKETING_PROVIDER, NOTIFY_CHANNEL, STORAGE_BACKEND); aquí solo se
+# trabaja con las interfaces.
 llm = LLM()
-snow = ServiceNowAdapter()
-notifier = NotificationAdapter()
-coordinator = CoordinatorAgent(llm, snow, notifier)
+snow = build_ticketing()
+notifier = build_notifier()
+approvals: ApprovalStorage = build_approval_store()
+coordinator = CoordinatorAgent(llm, snow, notifier, approvals)
 escalator = EscalationAgent(llm, snow)
-# Tipado con la interfaz (core/storage.py), no la clase concreta: un backend
-# real (Redis/Postgres) se enchufa aquí sin tocar el resto de server.py.
-store: ConversationStorage = ConversationStore(persist_path=config.CONV_STORE)
+store: ConversationStorage = build_conversation_store()
+
+# Bot de Teams: solo si está registrado en Entra ID (ver adapters/teams_bot.py)
+_bot_app_id = os.getenv("TEAMS_BOT_APP_ID", "")
+bot_auth = BotFrameworkAuth(_bot_app_id) if _bot_app_id else None
 
 # --- observability ---------------------------------------------------------
 telemetry = get_telemetry()
@@ -129,6 +141,12 @@ class ChatRequest(BaseModel):
 
 class EscalateRequest(BaseModel):
     conversation_id: str
+
+
+class ApprovalDecisionRequest(BaseModel):
+    decision: str = Field(pattern="^(approved|rejected)$")
+    decided_by: str = Field(min_length=1, max_length=200)
+    comment: str = Field(default="", max_length=1000)
 
 
 class TestMatrixRequest(BaseModel):
@@ -156,8 +174,11 @@ def health_detail(principal: Principal = Depends(require_role(ROLE_ADMIN))):
         "status": "ok",
         "llm_provider": llm.config.provider,
         "llm_model": llm.config.model,
+        "ticketing_provider": os.getenv("TICKETING_PROVIDER", "servicenow").lower(),
         "servicenow_mode": "live" if snow.live else "demo",
         "notification_channel": notifier.channel,
+        "notification_mode": getattr(notifier, "mode", "live" if notifier.live else "demo"),
+        "storage_backend": os.getenv("STORAGE_BACKEND", "file").lower(),
         "observability": "enabled",
         "langfuse": "enabled" if telemetry.langfuse else "disabled",
         "app_env": config.APP_ENV,
@@ -222,6 +243,114 @@ def escalate(req: EscalateRequest, principal: Principal = Depends(require_role(R
         metadata={"team": result.get("team", "") if isinstance(result, dict) else ""},
     )
     return result
+
+
+# --- Aprobaciones (Fase 2, I7) ----------------------------------------------
+def _resolve_approval(
+    approval_id: str, decision: str, decided_by: str, comment: str, actor: str
+) -> tuple[ApprovalRequest | None, bool]:
+    """Camino único para resolver una aprobación, venga de Teams o de la API.
+    `approvals.decide` es atómico: solo la primera decisión reanuda la
+    conversación; las repetidas o tardías devuelven el estado ya registrado."""
+    approval, changed = approvals.decide(approval_id, decision, decided_by, comment)
+    if approval is None:
+        return None, False
+    conv = store.get(approval.conversation_id)
+    resumable = changed or approval.status == EXPIRED
+    if conv and conv.status == "awaiting_approval" and resumable:
+        coordinator.resume_approval(conv, approval)
+        store.update(conv)
+    telemetry.approval(
+        approval.conversation_id,
+        approval.resource,
+        approval.manager,
+        notifier.channel,
+        status=approval.status,
+    )
+    audit.record(
+        action=f"approval.{decision}",
+        actor=actor,
+        target=approval.id,
+        outcome="ok" if changed else f"ignored:{approval.status}",
+        metadata={"conversation_id": approval.conversation_id, "ticket": approval.ticket_number},
+    )
+    return approval, changed
+
+
+@app.get("/api/approvals", dependencies=[Depends(rate_limit_dependency)])
+def list_approvals(principal: Principal = Depends(require_role(ROLE_AGENT))):
+    return [a.to_dict() for a in approvals.list_pending()]
+
+
+@app.post("/api/approvals/{approval_id}/decision", dependencies=[Depends(rate_limit_dependency)])
+def decide_approval(
+    approval_id: str,
+    req: ApprovalDecisionRequest,
+    principal: Principal = Depends(require_role(ROLE_AGENT)),
+):
+    """Registra la decisión de una aprobación sin bot de Teams (modo
+    Workflows, plan B con Power Automate, o un agente de mesa de ayuda)."""
+    approval, changed = _resolve_approval(
+        approval_id, req.decision, req.decided_by, req.comment, actor=principal.key_id
+    )
+    if approval is None:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    if not changed:
+        return JSONResponse(
+            {
+                "error": f"La aprobación ya no está pendiente ({approval.status}).",
+                "approval": approval.to_dict(),
+            },
+            status_code=409,
+        )
+    return approval.to_dict()
+
+
+def _invoke_response(card: dict) -> dict:
+    return {"statusCode": 200, "type": teams_cards.CARD_CONTENT_TYPE, "value": card}
+
+
+@app.post("/api/teams/messages", dependencies=[Depends(rate_limit_dependency)])
+async def teams_messages(request: Request, authorization: str | None = Header(default=None)):
+    """Endpoint de mensajería del bot de Teams (Azure Bot → Cloud Run).
+    No usa API keys: lo autentica el JWT firmado por Bot Framework."""
+    if bot_auth is None:
+        return JSONResponse({"error": "Bot de Teams no configurado."}, status_code=503)
+    activity = await request.json()
+    bot_auth.verify(authorization, activity.get("serviceUrl"))
+
+    if activity.get("type") != "invoke" or activity.get("name") != "adaptiveCard/action":
+        # conversationUpdate, mensajes de texto, etc.: no se procesan por ahora
+        return JSONResponse({}, status_code=200)
+
+    action = (activity.get("value") or {}).get("action") or {}
+    verb = str(action.get("verb", ""))
+    data = action.get("data") or {}
+    decision = {teams_cards.VERB_APPROVE: "approved", teams_cards.VERB_REJECT: "rejected"}.get(verb)
+    approval = approvals.get(str(data.get("approval_id", "")))
+    if decision not in DECISIONS or approval is None:
+        return _invoke_response(teams_cards.error_card("Solicitud de aprobación no encontrada."))
+
+    sender = activity.get("from") or {}
+    if approval.manager_aad_id and sender.get("aadObjectId") != approval.manager_aad_id:
+        audit.record(
+            action=f"approval.{decision}",
+            actor=f"teams:{sender.get('aadObjectId', '')}",
+            target=approval.id,
+            outcome="forbidden",
+        )
+        return _invoke_response(
+            teams_cards.error_card(f"Solo {approval.manager} puede responder esta aprobación.")
+        )
+
+    resolved, _ = _resolve_approval(
+        approval.id,
+        decision,
+        sender.get("name") or approval.manager,
+        str(data.get("comment", ""))[:1000],
+        actor=f"teams:{sender.get('aadObjectId', '')}",
+    )
+    return _invoke_response(teams_cards.approval_card(resolved or approval))
 
 
 # --- Generador de matrices de pruebas (HU-004) ------------------------------
@@ -340,6 +469,7 @@ if __name__ == "__main__":
     print(f"ServiceNow Multi-Agent API en http://localhost:{port}")
     print(f"  LLM: {llm.config.provider} ({llm.config.model})")
     print(f"  ServiceNow: {'LIVE' if snow.live else 'DEMO'}")
+    print(f"  Notificaciones: {notifier.channel} ({getattr(notifier, 'mode', '')})")
     print(f"  Observabilidad: telemetría JSON + Langfuse ({'ON' if telemetry.langfuse else 'OFF'})")
     print("  Seguridad: auth + RBAC + rate limit + redacción PII + audit trail")
     print(f"  CORS: {config.CORS_ORIGINS}")

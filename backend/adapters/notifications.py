@@ -5,15 +5,24 @@ Supports Slack, Microsoft Teams, and WhatsApp. In demo mode it logs the
 message; in live mode it posts via webhooks. Configure via env vars:
   NOTIFY_CHANNEL=slack|teams|whatsapp
   SLACK_WEBHOOK_URL / TEAMS_WEBHOOK_URL / WHATSAPP_API_URL
+
+Fase 2: con NOTIFY_CHANNEL=teams la fábrica (adapters/factory.py) usa
+`TeamsNotifier` (adapters/teams.py), con Adaptive Cards y aprobaciones
+interactivas. La rama "teams" de esta clase usa el formato de los conectores
+de Office 365, que Microsoft retiró; se conserva solo por compatibilidad.
 """
 
 from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
 
 import httpx
 
 from .. import config
+
+if TYPE_CHECKING:
+    from ..core.approvals import ApprovalRequest
 
 
 class NotificationAdapter:
@@ -57,7 +66,12 @@ class NotificationAdapter:
         }
 
     def send_approval_request(
-        self, manager: str, resource: str, ticket_number: str, channel: str | None = None
+        self,
+        manager: str,
+        resource: str,
+        ticket_number: str,
+        channel: str | None = None,
+        approval: ApprovalRequest | None = None,
     ) -> dict:
         subject = f"🔔 Aprobación requerida: {resource}"
         body = (

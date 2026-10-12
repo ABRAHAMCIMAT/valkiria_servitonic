@@ -8,8 +8,15 @@ manejando aprobaciones y escalaciones. Es el punto de entrada único.
 
 from __future__ import annotations
 
-from ..adapters.notifications import NotificationAdapter
-from ..adapters.servicenow import ServiceNowAdapter
+from ..adapters.ports import NotifierPort, TicketingPort
+from ..core.approvals import (
+    APPROVED,
+    EXPIRED,
+    REJECTED,
+    ApprovalRequest,
+    ApprovalStorage,
+    InMemoryApprovalStore,
+)
 from ..core.llm import LLM
 from ..core.models import Conversation, Intent, Ticket
 from ..llmops.errors import AgentError, LLMOpsError
@@ -27,10 +34,17 @@ log = get_logger("agente.coordinador")
 
 
 class CoordinatorAgent:
-    def __init__(self, llm: LLM, snow: ServiceNowAdapter, notifier: NotificationAdapter):
+    def __init__(
+        self,
+        llm: LLM,
+        snow: TicketingPort,
+        notifier: NotifierPort,
+        approvals: ApprovalStorage | None = None,
+    ):
         self.llm = llm
         self.snow = snow
         self.notifier = notifier
+        self.approvals: ApprovalStorage = approvals if approvals is not None else InMemoryApprovalStore()
         self.classifier = ClassifierAgent(llm)
         self.diagnostic = DiagnosticAgent(llm, snow)
         self.policy = PolicyAgent(llm)
@@ -61,7 +75,7 @@ class CoordinatorAgent:
         log.info(
             "conversación iniciada", extra={"caller": caller, "user_message": preview(user_message, 120)}
         )
-        conv = Conversation(user_message=user_message)
+        conv = Conversation(user_message=user_message, caller=caller)
         conv.add("coordinador", "🤖 Recibí tu solicitud. Voy a analizarla y enrutarla al agente adecuado.")
 
         # 1) Clasificación / triaje
@@ -81,6 +95,8 @@ class CoordinatorAgent:
                 short_description=cl.summary or user_message[:80],
                 description=user_message,
                 priority=cl.priority,
+                impact=cl.impact,
+                urgency=cl.urgency,
                 category=cl.category,
                 subcategory=cl.subcategory,
                 assignment_group=cl.assignment_group,
@@ -137,10 +153,11 @@ class CoordinatorAgent:
 
     # -- status -------------------------------------------------------------
     def _handle_status(self, conv: Conversation) -> Conversation:
-        # find most recent ticket for caller
-        tickets = list(self.snow._tickets.values()) if hasattr(self.snow, "_tickets") else []
+        # ticket más reciente del solicitante (en el sistema de tickets real,
+        # no en un atributo interno del adaptador)
+        tickets = self.snow.list_tickets(conv.caller, limit=1)
         if tickets:
-            t = tickets[-1]
+            t = tickets[0]
             conv.add(
                 "seguimiento",
                 f"📊 Tu ticket **{t.number}** está en estado **{t.state}** "
@@ -209,21 +226,110 @@ class CoordinatorAgent:
         manager = self.snow.get_manager(conv.ticket.caller if conv.ticket else "Carlos Carballo")
         mgr_name = (manager or {}).get("manager", "el manager")
         resource = self._resource_for(action, conv.user_message)
+        ticket_number = conv.ticket.number if conv.ticket else "N/A"
         if conv.ticket:
             self.snow.update_incident(conv.ticket, {"state": "Awaiting Approval"})
-        # send approval request via Slack/Teams/WhatsApp
-        notif = self.notifier.send_approval_request(
-            mgr_name, resource, conv.ticket.number if conv.ticket else "N/A"
+        # Registro de la aprobación pendiente: la respuesta del manager llega
+        # después (Teams o API) y con él se sabe qué conversación reanudar.
+        approval = self.approvals.create(
+            ApprovalRequest(
+                conversation_id=conv.id,
+                action=action,
+                resource=resource,
+                manager=mgr_name,
+                manager_email=(manager or {}).get("email") or "",
+                ticket_number=ticket_number,
+                requester=conv.caller,
+            )
         )
+        notif = self.notifier.send_approval_request(mgr_name, resource, ticket_number, approval=approval)
+        approval.delivery = {
+            k: notif[k] for k in ("channel", "delivered", "interactive", "success") if k in notif
+        }
+        self.approvals.update(approval)
         conv.add(
             "coordinador",
             f"⏳ La solicitud de **{resource}** requiere aprobación de **{mgr_name}**. "
-            f"Se envió la notificación por {notif.get('channel', 'Slack')}. "
+            f"Se envió la notificación por {notif.get('channel', 'Teams')}. "
             f"Te avisaré cuando se procese.",
-            data={"approval": notif, "manager": mgr_name, "resource": resource},
+            data={
+                "approval": notif,
+                "approval_id": approval.id,
+                "manager": mgr_name,
+                "resource": resource,
+            },
         )
         conv.status = "awaiting_approval"
         return conv
+
+    def resume_approval(self, conv: Conversation, approval: ApprovalRequest) -> Conversation:
+        """Reanuda una conversación en `awaiting_approval` con la decisión ya
+        registrada en `approval` (ver ApprovalStorage.decide). Aprobada →
+        ejecuta la acción y resuelve el ticket; rechazada → cierra el ticket
+        con el motivo; expirada → escala a Nivel 2."""
+        data = {"approval": approval.to_dict()}
+        if approval.status == EXPIRED:
+            conv.add(
+                "coordinador",
+                f"⌛ La solicitud de **{approval.resource}** expiró sin respuesta de "
+                f"**{approval.manager}**. Escalo el caso a un agente humano.",
+                data=data,
+            )
+            return self._escalate(conv)
+
+        if approval.status == REJECTED:
+            reason = approval.comment or "sin comentario"
+            conv.add(
+                "coordinador",
+                f"❌ **{approval.decided_by}** rechazó la solicitud de **{approval.resource}**. "
+                f"Motivo: {reason}.",
+                data=data,
+            )
+            if conv.ticket:
+                self.snow.update_incident(
+                    conv.ticket,
+                    {
+                        "state": "Closed",
+                        "resolution_notes": f"Rechazado por {approval.decided_by}: {reason}",
+                    },
+                )
+            conv.status = "rejected"
+            self._notify_requester(conv, "Rechazado", f"Motivo: {reason}")
+            return conv
+
+        if approval.status != APPROVED:
+            raise ValueError(f"La aprobación {approval.id} no tiene una decisión ({approval.status}).")
+
+        conv.add(
+            "coordinador",
+            f"✅ **{approval.decided_by}** aprobó la solicitud de **{approval.resource}**.",
+            data=data,
+        )
+        result = self._run("ejecucion", self.execution.execute, conv, approval.action)
+        if not result.get("success", True):
+            conv.add(
+                "ejecucion",
+                f"⚠️ {result.get('message', 'No se pudo completar la acción automáticamente.')}",
+                data=result,
+            )
+            return self._escalate(conv)
+        conv.add("ejecucion", f"✅ {result.get('message', 'Acción ejecutada.')}", data=result)
+        if conv.ticket:
+            self.snow.update_incident(
+                conv.ticket,
+                {
+                    "state": "Resolved",
+                    "resolution_notes": f"Aprobado por {approval.decided_by}. {result.get('message', '')}",
+                },
+            )
+            conv.add("coordinador", f"🎫 Ticket **{conv.ticket.number}** resuelto y cerrado.")
+        conv.status = "resolved"
+        self._notify_requester(conv, "Resuelto", result.get("message", ""))
+        return conv
+
+    def _notify_requester(self, conv: Conversation, state: str, note: str) -> None:
+        if conv.caller and conv.ticket:
+            self.notifier.send_ticket_update(conv.caller, conv.ticket.number, state, note)
 
     def _is_metrics_query(self, msg: str) -> bool:
         m = msg.lower()

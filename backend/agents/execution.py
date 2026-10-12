@@ -47,7 +47,7 @@ class ExecutionAgent:
             return {
                 "success": True,
                 "action": "request_hardware",
-                "message": "Solicitud de hardware registrada. Se envió la aprobación al manager.",
+                "message": "Solicitud de hardware registrada para compra y entrega.",
             }
         return {
             "success": False,

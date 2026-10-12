@@ -18,10 +18,25 @@ APP_ENV = os.getenv("APP_ENV", "development")
 _PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = Path(os.getenv("DATA_DIR", str(_PROJECT_ROOT / "data")))
 
-LOG_FILE = os.getenv("LOG_FILE", "") or str(DATA_DIR / "app.log")
-TELEMETRY_LOG = os.getenv("TELEMETRY_LOG", "") or str(DATA_DIR / "telemetry.jsonl")
-CONV_STORE = os.getenv("CONV_STORE", "") or str(DATA_DIR / "conversations.json")
-AUDIT_LOG = os.getenv("AUDIT_LOG", "") or str(DATA_DIR / "audit.jsonl")
+# Fase 2: en Cloud Run (K_SERVICE definido) el disco es efimero y en memoria.
+# Logs, auditoria y telemetria salen como JSON por stdout, que Cloud Logging
+# indexa sin agente; los archivos solo se escriben si se piden explicitamente.
+ON_CLOUD_RUN = bool(os.getenv("K_SERVICE"))
+STRUCTURED_STDOUT = os.getenv("STRUCTURED_STDOUT", "true" if ON_CLOUD_RUN else "false").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+def _data_file(name: str) -> str:
+    return "" if ON_CLOUD_RUN else str(DATA_DIR / name)
+
+
+LOG_FILE = os.getenv("LOG_FILE", "") or _data_file("app.log")
+TELEMETRY_LOG = os.getenv("TELEMETRY_LOG", "") or _data_file("telemetry.jsonl")
+CONV_STORE = os.getenv("CONV_STORE", "") or _data_file("conversations.json")
+AUDIT_LOG = os.getenv("AUDIT_LOG", "") or _data_file("audit.jsonl")
 
 IS_PRODUCTION = APP_ENV == "production"
 
