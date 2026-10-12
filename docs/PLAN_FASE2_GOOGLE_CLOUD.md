@@ -1,7 +1,7 @@
 # Fase 2 — Google Cloud (Vertex AI), ServiceTonic y Microsoft Teams · Plan Incremental
 
-> **Proyecto:** Sistema Multiagente de Help Desk (`ABRAHAMCIMAT/servicenow-multiagent`)
-> **Rama:** `feature/integracion-google-cloud`
+> **Proyecto:** Sistema Multiagente de Help Desk (`ABRAHAMCIMAT/valkiria_servitonic`)
+> **Rama:** `feature/integracion-google-cloud` (fusionada en `main`)
 > **Prerrequisito:** Fase 0 (seguridad) y Fase 1 (contenedores, CI/CD, pruebas) completadas
 > **Duración estimada:** 6–8 semanas (8 incrementos de 2–5 días cada uno)
 > **Fecha:** 12 de octubre de 2026
@@ -274,7 +274,7 @@ solo tokens OAuth de Google Cloud, que **expiran a la hora**.
 | Imágenes | **Artifact Registry** (Docker, `us-central1`) | Sustituye a GHCR como origen del despliegue (GHCR se puede conservar) |
 | Secretos | **Secret Manager** | `API_KEYS`, credenciales de ServiceTonic y de Teams/Bot |
 | Identidad del servicio | **Cuenta de servicio** `snow-ma-run@` | Mínimo privilegio: `roles/aiplatform.user`, `roles/secretmanager.secretAccessor` (por secreto), `roles/datastore.user` (I4), `roles/logging.logWriter` |
-| CI/CD | **Workload Identity Federation** + GitHub Actions | Despliegue sin llaves JSON; el pool solo confía en el repo `ABRAHAMCIMAT/servicenow-multiagent` y la rama `main`/tags |
+| CI/CD | **Workload Identity Federation** + GitHub Actions | Despliegue sin llaves JSON; el pool solo confía en el repo `ABRAHAMCIMAT/valkiria_servitonic` y la rama `main`/tags |
 | IaC | **Terraform** | Todo reproducible; estado remoto en GCS |
 | Presupuesto | **Cloud Billing Budget** | Alertas al 50/90/100 % |
 

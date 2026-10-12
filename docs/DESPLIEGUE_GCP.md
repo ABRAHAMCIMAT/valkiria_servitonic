@@ -90,7 +90,7 @@ revisores obligatorios) y definir estas **variables** (no son secretos):
 | `GCP_DEPLOYER_SA` | `terraform output -raw deployer_service_account` |
 | `CLOUD_RUN_SERVICE` | `snow-multiagent-api` |
 
-El proveedor de identidad solo acepta tokens de `ABRAHAMCIMAT/servicenow-multiagent`
+El proveedor de identidad solo acepta tokens de `ABRAHAMCIMAT/valkiria_servitonic`
 emitidos para un job del environment del mismo nombre.
 
 ## 5. Desplegar

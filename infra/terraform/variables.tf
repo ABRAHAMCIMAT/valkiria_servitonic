@@ -109,7 +109,7 @@ variable "bigquery_location" {
 variable "github_repository" {
   description = "Repositorio autorizado a desplegar con Workload Identity Federation (owner/repo)."
   type        = string
-  default     = "ABRAHAMCIMAT/servicenow-multiagent"
+  default     = "ABRAHAMCIMAT/valkiria_servitonic"
 }
 
 variable "alert_notification_channels" {
