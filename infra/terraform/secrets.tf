@@ -32,3 +32,16 @@ resource "google_secret_manager_secret_iam_member" "runtime" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.runtime.email}"
 }
+
+# El workflow de rotación puede agregar versiones, pero no leer el valor de
+# los secretos. Se limita a los dos secretos que tienen un runbook de rotación.
+locals {
+  rotatable_secret_ids = toset(["api-keys", "teams-bot-app-password"])
+}
+
+resource "google_secret_manager_secret_iam_member" "deployer_rotator" {
+  for_each  = local.rotatable_secret_ids
+  secret_id = google_secret_manager_secret.app[each.value].id
+  role      = "roles/secretmanager.secretVersionAdder"
+  member    = "serviceAccount:${google_service_account.deployer.email}"
+}

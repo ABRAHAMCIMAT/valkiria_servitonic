@@ -32,6 +32,25 @@ resource "google_project_iam_member" "deployer_run" {
   member  = "serviceAccount:${google_service_account.deployer.email}"
 }
 
+# El mismo principal ejecuta los workflows manuales de verificación. Estos
+# roles son solo de lectura, salvo bigquery.jobUser que permite lanzar las
+# consultas de evidencia sin modificar datasets.
+locals {
+  deployer_audit_roles = [
+    "roles/iam.securityReviewer",
+    "roles/logging.viewer",
+    "roles/bigquery.dataViewer",
+    "roles/bigquery.jobUser",
+  ]
+}
+
+resource "google_project_iam_member" "deployer_audit" {
+  for_each = toset(local.deployer_audit_roles)
+  project  = var.project_id
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.deployer.email}"
+}
+
 resource "google_artifact_registry_repository_iam_member" "deployer_push" {
   location   = google_artifact_registry_repository.images.location
   repository = google_artifact_registry_repository.images.name

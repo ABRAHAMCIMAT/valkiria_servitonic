@@ -1,0 +1,176 @@
+name: Verificar seguridad GCP
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Entorno a verificar"
+        type: choice
+        options: [dev, prod]
+        required: true
+      second_reviewer:
+        description: "Usuario del segundo responsable que revisará la evidencia"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify:
+    name: Seguridad (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      ALLOWED_ORIGIN: ${{ vars.CORS_ORIGIN }}
+      BIGQUERY_DATASET: ${{ vars.BIGQUERY_DATASET }}
+      SECURITY_USER_KEY: ${{ secrets.SECURITY_USER_KEY }}
+      SECURITY_AGENT_KEY: ${{ secrets.SECURITY_AGENT_KEY }}
+      SECURITY_ADMIN_KEY: ${{ secrets.SECURITY_ADMIN_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar configuración requerida
+        env:
+          WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          DEPLOYER_SA: ${{ vars.GCP_DEPLOYER_SA }}
+        run: |
+          set -euo pipefail
+          for name in PROJECT_ID REGION SERVICE ALLOWED_ORIGIN BIGQUERY_DATASET \
+            WIF_PROVIDER DEPLOYER_SA SECURITY_USER_KEY SECURITY_AGENT_KEY SECURITY_ADMIN_KEY; do
+            test -n "${!name:-}" || { echo "::error::Falta $name en el environment"; exit 1; }
+          done
+
+      - name: Autenticar con Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install httpx
+
+      - name: Resolver URL del servicio
+        id: service
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" \
+            --region "$REGION" --format='value(status.url)')
+          test -n "$URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verificar autenticación, roles, CORS y endpoints
+        run: |
+          python scripts/security_smoke.py \
+            --base-url '${{ steps.service.outputs.url }}' \
+            --allowed-origin "$ALLOWED_ORIGIN" | tee security-smoke.txt
+
+      - name: Enviar canarios sintéticos
+        id: canary
+        env:
+          BASE_URL: ${{ steps.service.outputs.url }}
+        run: |
+          set -euo pipefail
+          RUN="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          EMAIL_CANARY="fase0-${RUN}@example.invalid"
+          SECRET_CANARY="fase0-secret-${RUN}"
+          BODY=$(jq -cn --arg m "contacto $EMAIL_CANARY api_key=$SECRET_CANARY" '{message:$m}')
+          curl -fsS "$BASE_URL/api/chat" -H "X-API-Key: $SECURITY_USER_KEY" \
+            -H 'Content-Type: application/json' -d "$BODY" >/dev/null
+          echo "email=$EMAIL_CANARY" >> "$GITHUB_OUTPUT"
+          echo "secret=$SECRET_CANARY" >> "$GITHUB_OUTPUT"
+
+      - name: Esperar propagación de logs y sinks
+        run: sleep 90
+
+      - name: Confirmar ausencia en Cloud Logging
+        env:
+          EMAIL_CANARY: ${{ steps.canary.outputs.email }}
+          SECRET_CANARY: ${{ steps.canary.outputs.secret }}
+        run: |
+          set -euo pipefail
+          FILTER="resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE"
+          EMAIL_HITS=$(gcloud logging read "$FILTER AND \"$EMAIL_CANARY\"" \
+            --project "$PROJECT_ID" --freshness=30m --limit=20 --format='value(timestamp)' | wc -l)
+          SECRET_HITS=$(gcloud logging read "$FILTER AND \"$SECRET_CANARY\"" \
+            --project "$PROJECT_ID" --freshness=30m --limit=20 --format='value(timestamp)' | wc -l)
+          printf 'cloud_logging_email_hits=%s\ncloud_logging_secret_hits=%s\n' \
+            "$EMAIL_HITS" "$SECRET_HITS" | tee cloud-logging-evidence.txt
+          test "$EMAIL_HITS" -eq 0
+          test "$SECRET_HITS" -eq 0
+
+      - name: Confirmar ausencia en BigQuery
+        env:
+          EMAIL_CANARY: ${{ steps.canary.outputs.email }}
+          SECRET_CANARY: ${{ steps.canary.outputs.secret }}
+        run: |
+          set -euo pipefail
+          TABLES=$(bq ls --project_id="$PROJECT_ID" --format=json "$PROJECT_ID:$BIGQUERY_DATASET" \
+            | jq -r '.[].tableReference.tableId')
+          test -n "$TABLES" || { echo "::error::El sink aún no creó tablas en BigQuery"; exit 1; }
+          EMAIL_HITS=0
+          SECRET_HITS=0
+          for TABLE in $TABLES; do
+            EMAIL_HITS=$((EMAIL_HITS + $(bq query --project_id="$PROJECT_ID" --use_legacy_sql=false \
+              --format=csv "SELECT COUNT(*) FROM \`$PROJECT_ID.$BIGQUERY_DATASET.$TABLE\` t WHERE TO_JSON_STRING(t) LIKE '%$EMAIL_CANARY%'" | tail -1)))
+            SECRET_HITS=$((SECRET_HITS + $(bq query --project_id="$PROJECT_ID" --use_legacy_sql=false \
+              --format=csv "SELECT COUNT(*) FROM \`$PROJECT_ID.$BIGQUERY_DATASET.$TABLE\` t WHERE TO_JSON_STRING(t) LIKE '%$SECRET_CANARY%'" | tail -1)))
+          done
+          printf 'bigquery_email_hits=%s\nbigquery_secret_hits=%s\n' \
+            "$EMAIL_HITS" "$SECRET_HITS" | tee bigquery-evidence.txt
+          test "$EMAIL_HITS" -eq 0
+          test "$SECRET_HITS" -eq 0
+
+      - name: Revisar IAM y claves de cuentas de servicio
+        run: |
+          set -euo pipefail
+          : > iam-evidence.txt
+          for ACCOUNT in snow-ma-run snow-ma-deploy; do
+            EMAIL="$ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com"
+            echo "[$EMAIL]" >> iam-evidence.txt
+            gcloud projects get-iam-policy "$PROJECT_ID" \
+              --flatten='bindings[].members' --filter="bindings.members:serviceAccount:$EMAIL" \
+              --format='value(bindings.role)' | sort -u >> iam-evidence.txt
+            USER_KEYS=$(gcloud iam service-accounts keys list --iam-account "$EMAIL" \
+              --managed-by=user --format='value(name)' | wc -l)
+            echo "user_managed_keys=$USER_KEYS" >> iam-evidence.txt
+            test "$USER_KEYS" -eq 0
+          done
+
+      - name: Crear evidencia de revisión
+        env:
+          BASE_URL: ${{ steps.service.outputs.url }}
+          REVIEWER: ${{ inputs.second_reviewer }}
+        run: |
+          mkdir -p evidence
+          {
+            echo "# Evidencia Fase 0 — ${{ inputs.environment }}"
+            echo
+            echo "- Fecha UTC: $(date -u +%FT%TZ)"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Proyecto: $PROJECT_ID"
+            echo "- Servicio: $BASE_URL"
+            echo "- Segundo responsable: @$REVIEWER"
+            echo "- Aprobación: pendiente de revisión del artefacto y del deployment de GitHub"
+            echo
+            echo '## Smoke test'; cat security-smoke.txt
+            echo; echo '## Cloud Logging'; cat cloud-logging-evidence.txt
+            echo; echo '## BigQuery'; cat bigquery-evidence.txt
+            echo; echo '## IAM'; cat iam-evidence.txt
+          } > evidence/security-fase0-${{ inputs.environment }}.md
+
+      - name: Publicar evidencia
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-fase0-${{ inputs.environment }}-${{ github.run_id }}
+          path: evidence/
+          retention-days: 365
