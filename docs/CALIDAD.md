@@ -1,5 +1,9 @@
 # Calidad de software
 
+> Estado 14/10/2026: ✅ puerta local validada con 508 pruebas y 91.19 % de
+> cobertura. SonarCloud está integrado al workflow; su Quality Gate se
+> administra en la organización externa.
+
 ## Puertas automáticas
 
 Cada cambio en `main` o pull request debe superar:

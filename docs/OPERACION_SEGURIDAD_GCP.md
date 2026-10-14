@@ -1,5 +1,8 @@
 # Operación de cierre de seguridad en GCP
 
+> Estado 14/10/2026: automatización publicada en `main`; ejecución bloqueada
+> hasta crear el primer proyecto y vincular una cuenta de facturación.
+
 ## Estado de prerrequisitos
 
 Los proyectos GCP todavía no existen y no hay secretos operativos configurados.
@@ -53,7 +56,7 @@ Crear `dev` y `prod` en **Settings → Environments**. Configurar:
 | `GCP_DEPLOYER_SA` | `terraform output deployer_service_account` |
 | `CLOUD_RUN_SERVICE` | Nombre del servicio |
 | `CORS_ORIGIN` | Origen autorizado real |
-| `BIGQUERY_DATASET` | `snow_ma_telemetry` |
+| `BIGQUERY_DATASET` | `valkiria_telemetry` |
 
 Secretos requeridos para las verificaciones:
 

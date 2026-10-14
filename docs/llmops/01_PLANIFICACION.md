@@ -1,11 +1,15 @@
 # Fase 1 — Planificación
 
+> Revisión 14/10/2026: objetivos funcionales base implementados; producción
+> permanece bloqueada por bootstrap GCP, ServiceTonic y Entra ID. Consultar
+> [ESTADO_DESARROLLO.md](../ESTADO_DESARROLLO.md).
+
 ## Objetivo
 Definir el alcance, los objetivos de negocio y los criterios de éxito del
-sistema multiagente conversacional de soporte TI sobre ServiceNow.
+sistema multiagente conversacional de soporte TI integrado con ServiceTonic.
 
 ## Épica
-**EPIC-001 · Sistema Multiagente Conversacional de Soporte TI sobre ServiceNow**
+**EPIC-001 · Sistema Multiagente Conversacional de Soporte TI sobre ServiceTonic**
 
 ## Objetivos de negocio
 1. Reducir el tiempo de resolución (MTTR) de incidentes y solicitudes.
@@ -25,7 +29,7 @@ sistema multiagente conversacional de soporte TI sobre ServiceNow.
 ## Alcance
 - 8 agentes especializados (Coordinador, Clasificador, Diagnóstico, Políticas,
   Ejecución, Conocimiento/RAG, Seguimiento, Escalación).
-- Integración con ServiceNow, Active Directory, KB y canales de notificación.
+- Integración con ServiceTonic, Microsoft Graph, KB y Microsoft Teams.
 - Modelo-agnóstico (OpenAI, Jan, Mock).
 - Observabilidad y dashboard de 4 dimensiones.
 - Seguridad de producción: auth RBAC, rate limiting, redacción de PII, audit trail (Fase 0).
@@ -43,7 +47,7 @@ sistema multiagente conversacional de soporte TI sobre ServiceNow.
 | Dependencia de un proveedor LLM | Capa de abstracción modelo-agnóstica (`Strategy`, core/llm.py) |
 | Costos de tokens | Cálculo de costos y monitoreo por modelo; rate limiting por credencial/IP |
 | Alucinaciones del LLM | Guardrails, evaluación y RAG con fuentes |
-| Fallos de proveedor | Reintentos con backoff y degradación elegante (`retry()` conectado en LLM y ServiceNow) |
+| Fallos de proveedor | Reintentos con backoff y degradación elegante para Vertex AI y ServiceTonic |
 | API abierta sin control de acceso | Auth RBAC (`API_KEYS`, roles user/agent/admin) + rate limiting (`backend/security/`) |
 | PII en logs/telemetría | Redacción automática (`backend/security/redaction.py`); mensaje crudo nunca se registra por defecto |
 | Regresiones al cambiar código/prompts sin detectarse | Suite de pytest (400+ casos) + CI (lint, tipos, tests, seguridad, Docker) en cada push/PR |

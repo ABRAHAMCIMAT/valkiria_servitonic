@@ -1,5 +1,8 @@
 # Fase 5 — Observabilidad
 
+> Revisión 14/10/2026: telemetría, métricas y dashboard están implementados;
+> Cloud Logging, BigQuery, alertas y retención no tienen todavía evidencia real.
+
 ## Telemetría estandarizada (`backend/observability/telemetry.py`)
 
 El sistema emite **eventos JSON estandarizados** (JSONL) independientemente del
@@ -85,7 +88,7 @@ langfuse = get_langfuse()  # None si no está configurado
 | `GET /api/dashboard/events` | Eventos de telemetría crudos | admin |
 | `GET /dashboard` | Dashboard web (estático) | público |
 | `GET /api/health` | Liveness público, sin datos de configuración | público |
-| `GET /api/health/detail` | Estado + config (proveedor LLM, modo ServiceNow...) | admin |
+| `GET /api/health/detail` | Estado + configuración de Vertex, ServiceTonic y Teams | admin |
 
 Ver [07_GUARDRAILS.md](07_GUARDRAILS.md) — "Seguridad de la API" (Fase 0).
 

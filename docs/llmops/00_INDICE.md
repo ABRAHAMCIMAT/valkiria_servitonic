@@ -1,5 +1,10 @@
 # 📚 Documentación LLMOps — Sistema Multiagente Conversacional
 
+> Actualizada el 14 de octubre de 2026. Métricas vigentes: 508 pruebas,
+> 91.19 % de cobertura, CI con Ruff/Mypy/Bandit/`pip-audit`/SonarCloud. La
+> operación cloud continúa pendiente. Ver
+> [estado consolidado](../ESTADO_DESARROLLO.md).
+
 Control de documentación por fase del ciclo de vida LLMOps para el desarrollo
 de sistemas multiagentes conversacionales.
 
@@ -31,7 +36,8 @@ de sistemas multiagentes conversacionales.
 5. **Logging estructurado** — JSON con contexto por conversación/traza, sin PII cruda.
 6. **Control de errores** — excepciones tipadas, reintentos con backoff.
 7. **Patrones de diseño** — Registry, Strategy.
-8. **Modelo-agnóstico** — funciona con OpenAI, Jan o Mock sin cambios.
+8. **Modelo-agnóstico** — funciona con OpenAI, Jan, Vertex AI o Mock.
 9. **Seguridad de la API (Fase 0)** — auth RBAC, rate limiting, redacción de PII, audit trail.
 10. **Tests y CI** — suite de pytest (unit/integration/e2e) + lint/tipos/seguridad/Docker en cada push/PR.
 11. **Generación de matrices de pruebas** — casos positivos/negativos/de borde vía LLM (HU-004).
+12. **Calidad continua** — cobertura >90 %, SonarCloud y Dependabot.

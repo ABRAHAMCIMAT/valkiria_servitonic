@@ -1,7 +1,13 @@
 # Integración con Microsoft Teams
 
-> Fase 2, incremento I7 del [plan](../PLAN_FASE2_GOOGLE_CLOUD.md). Sustituye a
-> Slack para avisos y aprobaciones.
+> Fase 2, incremento I7 del [plan](../PLAN_FASE2_GOOGLE_CLOUD.md). Microsoft
+> Teams es el canal oficial para avisos y aprobaciones.
+
+> **Estado 14/10/2026:** 🟡 código listo y cubierto por pruebas; no existe aún
+> registro Entra ID, Azure Bot, secretos ni app instalada en el tenant. La
+> rotación está automatizada en `.github/workflows/rotate-secrets.yml`, pero
+> solo puede ejecutarse después del bootstrap GCP y de crear un secreto nuevo
+> en Entra ID.
 
 ## Qué hace
 

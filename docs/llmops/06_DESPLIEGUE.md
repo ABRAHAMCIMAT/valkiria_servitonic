@@ -1,10 +1,13 @@
 # Fase 6 — Despliegue y Operación
 
+> Revisión 14/10/2026: Docker y CI están validados. Terraform, WIF y workflows
+> GCP están listos, pero los proyectos dev/prod aún no existen.
+
 ## Modos de ejecución
 | Modo | Descripción | Uso |
 |------|-------------|-----|
 | **DEMO** | Sin credenciales, determinista | Validación y desarrollo |
-| **LIVE** | Con ServiceNow/AD/notificaciones reales | Producción |
+| **LIVE** | Con ServiceTonic, Vertex AI y Teams reales | Producción |
 
 ## Despliegue local
 ```bash
@@ -71,7 +74,7 @@ dependencias de pip y las GitHub Actions.
 
 ## Escalado
 - El sistema es **stateless** por conversación (estado en memoria/JSON).
-- Para escalar: mover el estado a una base de datos (Redis/Postgres)
+- Para escalar: usar Firestore para estado durable y multiinstancia
   implementando `ConversationStorage` (`backend/core/storage.py` — un
   `Protocol` con `create`/`get`/`update`/`list`) y sustituyendo la
   instancia `ConversationStore` por la nueva en `server.py`; el resto del
@@ -79,4 +82,4 @@ dependencias de pip y las GitHub Actions.
   no contra la clase concreta.
 - Los agentes son **independientes** y pueden ejecutarse en paralelo.
 - El rate limiter (`backend/security/rate_limit.py`) es en memoria: con
-  varias réplicas necesita moverse a un backend compartido (Redis).
+  varias réplicas necesita Firestore o Memorystore como backend compartido.

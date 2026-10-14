@@ -1,16 +1,18 @@
-# Guía de pruebas
+# Guía de pruebas y calidad
 
-> Sistema Multiagente ServiceNow · Fase 1
-> Última actualización: 21 de septiembre de 2026
+> Valkiria ServiceTonic · Actualizada el 14 de octubre de 2026. Estado general:
+> [ESTADO_DESARROLLO.md](ESTADO_DESARROLLO.md).
 
 ## 1. Resumen
 
 | Métrica | Valor |
 |---------|-------|
-| Pruebas | **408** |
-| Archivos | 21 |
-| Cobertura | **87 %** (umbral 70 %) |
-| Duración | ~7 s |
+| Pruebas | **508** |
+| Cobertura | **91.19 %** (umbral estricto >90 %) |
+| Python CI | 3.11 y 3.12 |
+| Calidad | Ruff + Mypy + SonarCloud |
+| Seguridad | Bandit + `pip-audit` |
+| Duración local aproximada | 14–20 s |
 | Red requerida | Ninguna |
 | Credenciales requeridas | Ninguna |
 
@@ -18,11 +20,11 @@
 
 ```
         ┌──────────────────────────────┐
-        │  e2e (9)                     │  Flujo conversacional completo
+        │  e2e                         │  Flujo conversacional completo
         ├──────────────────────────────┤
-        │  integración (~180)          │  API, 7 agentes, adaptadores
+        │  integración                 │  API, agentes, adaptadores
         ├──────────────────────────────┤
-        │  unitarias (~220)            │  Módulos aislados
+        │  unitarias                   │  Módulos aislados
         └──────────────────────────────┘
 ```
 
@@ -45,7 +47,7 @@ licencia, conocimiento, estado). Ventajas:
 - **Reproducible** → un fallo se reproduce siempre igual.
 - **Rápido** → la suite completa tarda ~7 segundos.
 
-Esto permite probar el sistema **completo** (8 agentes, adaptadores, API) sin
+Esto permite probar el sistema **completo** (orquestador, agentes, adaptadores y API) sin
 infraestructura. Es la base de la estrategia.
 
 ## 4. Cómo ejecutar
@@ -73,7 +75,7 @@ La fixture autouse `_isolated_env` (en `tests/conftest.py`) garantiza que:
 - `LOG_USER_CONTENT=false` (privacidad primero).
 - Los globales de seguridad se resetean: `auth._API_KEYS`, `limiter._hits`,
   `audit._log`.
-- Las credenciales de ServiceNow y los webhooks se eliminan.
+- Las credenciales de ServiceTonic y Teams se eliminan.
 
 **Regla:** si una prueba necesita mutar un flag del módulo `config`, usa
 `monkeypatch.setattr` — mutarlo directamente contamina las pruebas siguientes.
@@ -118,6 +120,10 @@ justificación:
 
 - `observability/langfuse_integration.py` — dependencia opcional, requiere red.
 - `*/__init__.py` — solo reexportaciones.
+
+El valor vigente es `fail_under = 90.01`; cualquier cobertura de 90 % exacto
+o inferior bloquea CI. SonarCloud agrega una puerta de calidad para código
+nuevo y Dependabot mantiene Python, Actions, Docker y Terraform.
 
 ## 8. Pruebas de regresión de la Fase 0
 

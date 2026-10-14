@@ -1,5 +1,9 @@
 # Integración con Jan
 
+> Actualizada el 14 de octubre de 2026. La integración sigue soportada para
+> desarrollo local; producción apunta a Vertex AI. Todos los endpoints de chat
+> exigen una API key válida.
+
 Jan (github.com/janhq/jan) es un frontend de chat open-source que ejecuta LLMs localmente con privacidad. Este sistema multiagente se integra con Jan de dos formas complementarias:
 
 ## Opción A: Jan como proveedor de LLM para los agentes
@@ -26,8 +30,8 @@ El backend expone un **endpoint compatible con OpenAI** en `http://localhost:800
 1. Ejecuta el backend: `./scripts/run_demo.sh` (o `run_live.sh`).
 2. En Jan, añade un **proveedor personalizado** (Settings → Advanced → OpenAI-compatible API):
    - **Base URL:** `http://localhost:8000/v1`
-   - **API Key:** `jan` (cualquier valor)
-   - **Model:** `servicenow-multiagent`
+   - **API Key:** una credencial configurada en `API_KEYS` con rol `user`
+   - **Model:** `valkiria-servitonic`
 3. Selecciona el modelo en el chat de Jan y conversa con el sistema multiagente.
 
 Cada mensaje que envíes a Jan se enruta al orquestador, que ejecuta el flujo multiagente completo y devuelve la respuesta.
