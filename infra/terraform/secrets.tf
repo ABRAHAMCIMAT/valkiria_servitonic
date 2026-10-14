@@ -25,8 +25,10 @@ resource "google_secret_manager_secret" "app" {
 
 # Acceso por secreto (no a nivel de proyecto)
 resource "google_secret_manager_secret_iam_member" "runtime" {
-  for_each  = google_secret_manager_secret.app
-  secret_id = each.value.id
+  # La cuenta de ejecución solo accede a los secretos montados en este
+  # entorno, no a todos los contenedores de secretos futuros o inactivos.
+  for_each  = toset(values(var.secret_env))
+  secret_id = google_secret_manager_secret.app[each.value].id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.runtime.email}"
 }

@@ -3,7 +3,7 @@ PY := python3
 PIP := $(PY) -m pip
 
 .PHONY: help install dev test test-unit test-int test-e2e cov lint fmt typecheck \
-        security ci docker-build up down logs clean gcp-init gcp-plan gcp-apply teams-app
+        security security-live ci docker-build up down logs clean gcp-init gcp-plan gcp-apply teams-app
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -42,7 +42,11 @@ typecheck:  ## Verificacion de tipos
 	mypy backend
 
 security:  ## Auditoria de seguridad
-	bandit -r backend -ll
+	bandit -r backend -ll -x backend/observability/langfuse_integration.py
+	pip-audit -r requirements.txt
+
+security-live:  ## Pruebas basicas contra BASE_URL desplegada
+	$(PY) scripts/security_smoke.py --base-url "$(BASE_URL)" --allowed-origin "$(ALLOWED_ORIGIN)"
 
 ci: lint test  ## Equivalente local del pipeline CI
 

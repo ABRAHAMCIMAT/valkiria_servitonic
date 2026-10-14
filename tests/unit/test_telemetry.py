@@ -55,6 +55,17 @@ def test_free_text_fields_are_redacted(tel, field):
     assert "[REDACTED:email]" in tel.events()[0][field]
 
 
+def test_any_top_level_field_is_redacted(tel):
+    tel.emit({"type": "approval", "manager": "ana@corp.com"})
+    assert tel.events()[0]["manager"] == "[REDACTED:email]"
+
+
+def test_structured_secret_is_never_persisted(tel, tmp_path):
+    tel.emit({"type": "x", "metadata": {"api_key": "opaque-secret-value"}})
+    assert "opaque-secret-value" not in (tmp_path / "tel.jsonl").read_text()
+    assert tel.events()[0]["metadata"]["api_key"] == "[REDACTED:secret]"
+
+
 def test_non_string_fields_are_untouched(tel):
     tel.emit({"type": "x", "duration_ms": 120, "found": True})
     e = tel.events()[0]

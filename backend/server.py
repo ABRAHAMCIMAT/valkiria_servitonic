@@ -475,4 +475,7 @@ if __name__ == "__main__":
     print(f"  CORS: {config.CORS_ORIGINS}")
     print(f"  Dashboard: http://localhost:{port}/dashboard")
     print(f"  Endpoint OpenAI-compatible (para Jan): http://localhost:{port}/v1/chat/completions")
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # El contenedor debe escuchar en todas sus interfaces para que Cloud Run
+    # pueda enrutar tráfico. La exposición externa sigue controlada por IAM,
+    # CORS, autenticación de aplicación y la configuración de ingress.
+    uvicorn.run(app, host="0.0.0.0", port=port)  # nosec B104

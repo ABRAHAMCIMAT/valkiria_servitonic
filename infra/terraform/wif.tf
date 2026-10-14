@@ -20,7 +20,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   }
 
   # Solo este repositorio y solo jobs del environment de GitHub correspondiente
-  attribute_condition = "assertion.repository == '${var.github_repository}' && assertion.environment == '${var.environment}'"
+  attribute_condition = "assertion.repository == '${var.github_repository}' && assertion.environment == '${var.environment}' && (assertion.ref == 'refs/heads/main' || assertion.ref.startsWith('refs/tags/v'))"
 
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"

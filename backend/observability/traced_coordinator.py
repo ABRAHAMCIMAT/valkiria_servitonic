@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import cast
 
 from ..core.models import Conversation, Intent
 from ..security.redaction import preview
@@ -46,7 +47,7 @@ class TracedCoordinator:
                 sub.llm = InstrumentedLLM(orig_llm, self._telemetry, trace_id, attr)
 
         try:
-            conv = coord.handle(user_message, caller=caller)
+            conv = cast(Conversation, coord.handle(user_message, caller=caller))
         finally:
             coord.llm = orig_llm
             for attr in ("classifier", "diagnostic", "policy", "execution", "knowledge"):

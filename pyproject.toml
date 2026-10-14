@@ -80,7 +80,10 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-fail_under = 70
+precision = 2
+# La puerta local/CI exige más de 90 %. SonarCloud aplica además >90 %
+# sobre código nuevo para evitar que la media histórica oculte regresiones.
+fail_under = 90.01
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",

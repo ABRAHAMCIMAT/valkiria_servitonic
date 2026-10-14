@@ -13,6 +13,13 @@ import re
 # de telefono (voraz), de lo contrario una tarjeta, una IPv4 o un SSN se
 # etiquetarian como "phone". Regresion cubierta en tests/unit/test_security_redaction.py
 _PATTERNS = [
+    # Credenciales que accidentalmente aparezcan dentro de mensajes de error.
+    # Los valores estructurados se cubren además con `sanitize_for_logging`.
+    ("credential", re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]+")),
+    (
+        "credential",
+        re.compile(r"(?i)\b(?:api[_-]?key|access[_-]?token|password|secret)\s*[:=]\s*[^\s,;]+"),
+    ),
     ("email", re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")),
     ("ssn", re.compile(r"(?<!\d)\d{3}-\d{2}-\d{4}(?!\d)")),
     ("card", re.compile(r"(?<!\d)(?:\d[ -]?){13,19}(?!\d)")),
@@ -49,6 +56,51 @@ _default = Redactor()
 def redact_text(text: str) -> str:
     """Redacta PII en un texto completo."""
     return _default.redact(text)
+
+
+_SENSITIVE_FIELDS = {
+    "api_key",
+    "apikey",
+    "authorization",
+    "cookie",
+    "credential",
+    "password",
+    "secret",
+    "token",
+    "webhook_url",
+}
+_SENSITIVE_FIELD_SUFFIXES = (
+    "_api_key",
+    "_apikey",
+    "_authorization",
+    "_cookie",
+    "_credential",
+    "_password",
+    "_secret",
+    "_token",
+    "_webhook_url",
+)
+
+
+def sanitize_for_logging(value, field_name: str = ""):
+    """Redacta PII y secretos en estructuras destinadas a logs.
+
+    Los secretos arbitrarios no siempre tienen un patrón reconocible. Por eso,
+    además de redactar texto, cualquier valor bajo una clave sensible se omite
+    por completo. Se aplica recursivamente a diccionarios y listas.
+    """
+    normalized = field_name.strip().lower().replace("-", "_")
+    if normalized in _SENSITIVE_FIELDS or normalized.endswith(_SENSITIVE_FIELD_SUFFIXES):
+        return "[REDACTED:secret]"
+    if isinstance(value, str):
+        return redact_text(value)
+    if isinstance(value, dict):
+        return {key: sanitize_for_logging(item, str(key)) for key, item in value.items()}
+    if isinstance(value, list):
+        return [sanitize_for_logging(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(sanitize_for_logging(item) for item in value)
+    return value
 
 
 def redact(text: str, max_len: int = 120) -> str:

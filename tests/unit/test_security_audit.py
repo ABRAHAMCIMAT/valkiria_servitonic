@@ -75,3 +75,20 @@ def test_actor_is_key_id_not_raw_key(tmp_path):
     path = tmp_path / "audit.jsonl"
     AuditLog(str(path)).record(action="chat", actor=key_id_for(raw))
     assert raw not in path.read_text()
+
+
+def test_redacts_pii_and_structured_secrets(tmp_path):
+    from backend.security.audit import AuditLog
+
+    path = tmp_path / "audit.jsonl"
+    AuditLog(str(path)).record(
+        action="integration.test",
+        actor="abc123",
+        metadata={"manager": "ana@corp.com", "access_token": "opaque-secret-value"},
+    )
+    text = path.read_text()
+    assert "ana@corp.com" not in text
+    assert "opaque-secret-value" not in text
+    entry = json.loads(text)
+    assert entry["metadata"]["manager"] == "[REDACTED:email]"
+    assert entry["metadata"]["access_token"] == "[REDACTED:secret]"

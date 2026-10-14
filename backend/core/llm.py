@@ -357,12 +357,13 @@ class OpenAICompatLLM:
             return str(content)
 
         # Fase 0: retry() con backoff exponencial + jitter (antes definido y no usado)
-        return retry(
+        result: str = retry(
             _post,
             max_attempts=3,
             base_delay=0.5,
             retry_on=(httpx.TransportError, httpx.TimeoutException, RetryableError),
         )
+        return result
 
 
 # ---------------------------------------------------------------------------

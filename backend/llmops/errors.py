@@ -62,7 +62,7 @@ def retry(
     max_attempts: int = 3,
     base_delay: float = 0.5,
     max_delay: float = 8.0,
-    retry_on: tuple = (RetryableError, TimeoutError, ConnectionError),
+    retry_on: tuple[type[BaseException], ...] = (RetryableError, TimeoutError, ConnectionError),
     logger: Any | None = None,
 ) -> T:
     """Ejecuta `func` con reintentos y backoff exponencial + jitter.
@@ -109,10 +109,10 @@ def retry(
 def safe_call(
     func: Callable[..., T],
     *,
-    default: Any = None,
+    default: T | None = None,
     logger: Any | None = None,
-    error_type: type = Exception,
-) -> T:
+    error_type: type[BaseException] = Exception,
+) -> T | None:
     """Ejecuta `func` y devuelve `default` si falla, registrando el error.
 
     Útil para pasos no críticos donde la degradación elegante es preferible

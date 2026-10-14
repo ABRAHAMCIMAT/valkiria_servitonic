@@ -21,7 +21,7 @@ import os
 import sys
 from datetime import UTC, datetime
 
-from ..security.redaction import redact_text
+from ..security.redaction import redact_text, sanitize_for_logging
 
 
 class JsonFormatter(logging.Formatter):
@@ -54,9 +54,9 @@ class JsonFormatter(logging.Formatter):
         ):
             if hasattr(record, key):
                 value = getattr(record, key)
-                entry[key] = redact_text(value) if isinstance(value, str) else value
+                entry[key] = sanitize_for_logging(value, key)
         if record.exc_info:
-            entry["exception"] = self.formatException(record.exc_info)
+            entry["exception"] = redact_text(self.formatException(record.exc_info))
         return json.dumps(entry, ensure_ascii=False)
 
 

@@ -2,10 +2,17 @@ version: 2
 updates:
   - package-ecosystem: pip
     directory: "/"
+    target-branch: main
     schedule:
       interval: weekly
       day: monday
+      time: "06:00"
+      timezone: "America/Mexico_City"
+    rebase-strategy: auto
+    versioning-strategy: increase
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(python)"
     groups:
       python-minor:
         patterns: ["*"]
@@ -14,12 +21,45 @@ updates:
 
   - package-ecosystem: github-actions
     directory: "/"
+    target-branch: main
     schedule:
       interval: weekly
+      day: monday
+      time: "06:15"
+      timezone: "America/Mexico_City"
+    rebase-strategy: auto
+    commit-message:
+      prefix: "deps(actions)"
+    groups:
+      github-actions:
+        patterns: ["*"]
     labels: ["dependencias", "ci"]
 
   - package-ecosystem: docker
     directory: "/"
+    target-branch: main
     schedule:
       interval: weekly
+      day: monday
+      time: "06:30"
+      timezone: "America/Mexico_City"
+    rebase-strategy: auto
+    commit-message:
+      prefix: "deps(docker)"
     labels: ["dependencias", "docker"]
+
+  - package-ecosystem: terraform
+    directory: "/infra/terraform"
+    target-branch: main
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:45"
+      timezone: "America/Mexico_City"
+    rebase-strategy: auto
+    commit-message:
+      prefix: "deps(terraform)"
+    groups:
+      terraform-providers:
+        patterns: ["*"]
+    labels: ["dependencias", "infraestructura"]

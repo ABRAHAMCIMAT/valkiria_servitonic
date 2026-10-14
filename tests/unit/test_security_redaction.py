@@ -95,3 +95,23 @@ def test_custom_patterns_can_be_added():
 
     r = Redactor(extra_patterns=[("employee_id", re.compile(r"EMP-\d{4}"))])
     assert "[REDACTED:employee_id]" in r.redact("empleado EMP-1234")
+
+
+def test_redacts_bearer_and_inline_credentials():
+    from backend.security.redaction import redact_text
+
+    raw = "Authorization: Bearer abc.def-123 api_key=super-secret"
+    safe = redact_text(raw)
+    assert "abc.def-123" not in safe
+    assert "super-secret" not in safe
+
+
+def test_sanitize_masks_sensitive_fields_recursively():
+    from backend.security.redaction import sanitize_for_logging
+
+    safe = sanitize_for_logging(
+        {"metadata": {"api_token": "opaque-value", "user": "ana@corp.com"}, "status": "ok"}
+    )
+    assert safe["metadata"]["api_token"] == "[REDACTED:secret]"
+    assert safe["metadata"]["user"] == "[REDACTED:email]"
+    assert safe["status"] == "ok"

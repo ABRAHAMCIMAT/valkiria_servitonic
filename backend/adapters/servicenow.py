@@ -129,8 +129,9 @@ class ServiceNowAdapter:
         (timeout, red, 429, 5xx); los demás se traducen a ProviderError."""
 
         def _call() -> httpx.Response:
+            assert self._client is not None
             try:
-                resp = self._client.request(method, url, headers=self._headers(), **kw)
+                resp: httpx.Response = self._client.request(method, url, headers=self._headers(), **kw)
             except httpx.TransportError as e:
                 raise RetryableError(f"error de red hacia ServiceNow: {e}") from e
             if resp.status_code == 429 or resp.status_code >= 500:
@@ -139,7 +140,8 @@ class ServiceNowAdapter:
                 raise ProviderError(f"ServiceNow devolvió {resp.status_code}: {resp.text[:300]}")
             return resp
 
-        return retry(_call, max_attempts=3, base_delay=0.5, max_delay=8.0, logger=log)
+        result: httpx.Response = retry(_call, max_attempts=3, base_delay=0.5, max_delay=8.0, logger=log)
+        return result
 
     # -- incidents ----------------------------------------------------------
     def create_incident(self, ticket: Ticket) -> Ticket:

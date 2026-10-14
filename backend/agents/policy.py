@@ -7,6 +7,8 @@ las políticas de la organización (matriz de aprobación).
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 from ..core.llm import LLM
 from ..core.models import Conversation
 from ..llmops.evals import Evaluator, check_json_schema
@@ -14,8 +16,16 @@ from ..llmops.logging import get_logger
 
 log = get_logger("agente.politicas")
 
+
+class PolicyDefinition(TypedDict, total=False):
+    requires_approval: bool
+    self_service: bool
+    approver_role: str | None
+    threshold: str
+
+
 # Matriz de políticas: qué requiere aprobación y de quién
-POLICY_MATRIX = {
+POLICY_MATRIX: dict[str, PolicyDefinition] = {
     "unlock_account": {"requires_approval": False, "self_service": True, "approver_role": None},
     "reset_password": {"requires_approval": False, "self_service": True, "approver_role": None},
     "assign_license": {
@@ -38,9 +48,12 @@ class PolicyAgent:
         )
 
     def evaluate(self, conv: Conversation, action: str) -> dict:
-        policy = POLICY_MATRIX.get(
-            action, {"requires_approval": False, "self_service": True, "approver_role": None}
-        )
+        default_policy: PolicyDefinition = {
+            "requires_approval": False,
+            "self_service": True,
+            "approver_role": None,
+        }
+        policy = POLICY_MATRIX.get(action, default_policy)
         result = {
             "action": action,
             "requires_approval": policy["requires_approval"],

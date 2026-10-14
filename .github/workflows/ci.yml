@@ -88,7 +88,35 @@ jobs:
         run: pip-audit -r requirements.txt
 
   # ---------------------------------------------------------------------------
-  # 4) Docker: build + prueba de humo
+  # 4) SonarCloud: análisis y Quality Gate
+  # ---------------------------------------------------------------------------
+  sonar:
+    name: SonarCloud Quality Gate
+    runs-on: ubuntu-latest
+    needs: [test]
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Descargar cobertura y resultados Python 3.12
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results-3.12
+          path: .
+      - name: Verificar configuración de SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: test -n "$SONAR_TOKEN" || (echo "Falta el secreto SONAR_TOKEN" && exit 1)
+      - name: Analizar y esperar Quality Gate
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ---------------------------------------------------------------------------
+  # 5) Docker: build + prueba de humo
   # ---------------------------------------------------------------------------
   docker:
     name: Docker build y humo
@@ -148,12 +176,12 @@ jobs:
         run: docker rm -f smoke || true
 
   # ---------------------------------------------------------------------------
-  # 5) Puerta final
+  # 6) Puerta final
   # ---------------------------------------------------------------------------
   ci-status:
     name: Estado CI
     runs-on: ubuntu-latest
-    needs: [lint, test, security, docker]
+    needs: [lint, test, security, sonar, docker]
     if: always()
     steps:
       - name: Verificar todos los jobs
@@ -161,10 +189,12 @@ jobs:
           echo "lint=${{ needs.lint.result }}"
           echo "test=${{ needs.test.result }}"
           echo "security=${{ needs.security.result }}"
+          echo "sonar=${{ needs.sonar.result }}"
           echo "docker=${{ needs.docker.result }}"
           if [ "${{ needs.lint.result }}" != "success" ] || \
              [ "${{ needs.test.result }}" != "success" ] || \
              [ "${{ needs.security.result }}" != "success" ] || \
+             [ "${{ needs.sonar.result }}" != "success" ] || \
              [ "${{ needs.docker.result }}" != "success" ]; then
             echo "Algun job fallo"; exit 1
           fi

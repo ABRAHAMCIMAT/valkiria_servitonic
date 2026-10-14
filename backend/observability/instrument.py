@@ -54,7 +54,7 @@ class InstrumentedLLM:
                 cost_usd=cost,
                 status=status,
             )
-        return result
+        return str(result)
 
     def chat_json(self, system: str, user: str, **kw) -> Any:
         start = time.time()

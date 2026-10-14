@@ -8,6 +8,7 @@ licencia) y devuelve el resultado al usuario.
 
 from __future__ import annotations
 
+from ..adapters.ports import TicketingPort
 from ..core.llm import LLM
 from ..core.models import Conversation
 from ..llmops.evals import Evaluator, check_json_schema
@@ -17,7 +18,7 @@ log = get_logger("agente.ejecucion")
 
 
 class ExecutionAgent:
-    def __init__(self, llm: LLM, snow):
+    def __init__(self, llm: LLM, snow: TicketingPort):
         self.llm = llm
         self.snow = snow
         self.evaluator = Evaluator()

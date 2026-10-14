@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import os
 from collections import Counter, defaultdict
+from typing import Any
 
 from ..config import TELEMETRY_LOG
 
@@ -26,7 +27,7 @@ class MetricsEngine:
 
     # -- loading ------------------------------------------------------------
     def load_events(self) -> list[dict]:
-        events = []
+        events: list[dict[str, Any]] = []
         if not os.path.exists(self.log_path):
             return events
         with open(self.log_path) as f:
@@ -115,7 +116,9 @@ class MetricsEngine:
         total_tokens = total_prompt + total_completion
 
         # Per-model token breakdown
-        per_model = defaultdict(lambda: {"prompt": 0, "completion": 0, "cost": 0.0})
+        per_model: defaultdict[str, dict[str, float]] = defaultdict(
+            lambda: {"prompt": 0, "completion": 0, "cost": 0.0}
+        )
         for e in llms:
             m = e.get("model", "unknown")
             per_model[m]["prompt"] += e.get("prompt_tokens", 0)

@@ -15,6 +15,8 @@ import sys
 import threading
 from datetime import UTC, datetime
 
+from .redaction import sanitize_for_logging
+
 _lock = threading.Lock()
 
 
@@ -30,14 +32,16 @@ class AuditLog:
         self, *, action: str, actor: str, target: str = "", outcome: str = "ok", metadata: dict | None = None
     ) -> None:
         """Escribe una entrada de auditoria. Nunca lanza excepciones."""
-        entry = {
-            "ts": datetime.now(UTC).isoformat(),
-            "action": action,
-            "actor": actor,
-            "target": target,
-            "outcome": outcome,
-            "metadata": metadata or {},
-        }
+        entry = sanitize_for_logging(
+            {
+                "ts": datetime.now(UTC).isoformat(),
+                "action": action,
+                "actor": actor,
+                "target": target,
+                "outcome": outcome,
+                "metadata": metadata or {},
+            }
+        )
         from .. import config
 
         if config.STRUCTURED_STDOUT:

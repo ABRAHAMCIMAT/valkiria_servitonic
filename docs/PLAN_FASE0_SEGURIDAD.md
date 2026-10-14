@@ -20,6 +20,33 @@ Eliminar los **riesgos críticos de seguridad y de operación** que impiden expo
 - Toda acción sensible queda registrada en un *audit trail* inmutable.
 - `requirements.txt`, `.gitignore` y `.env.example` versionados.
 
+## Estado de cierre — 14 de octubre de 2026
+
+### Validado en código y entorno local
+
+- [x] Autenticación, RBAC, CORS, rate limiting y guardrails.
+- [x] Redacción recursiva de PII y secretos en logs, telemetría y auditoría.
+- [x] Bandit sin hallazgos medios/altos; el bind `0.0.0.0` está justificado
+  exclusivamente para el proceso dentro del contenedor.
+- [x] `pip-audit` sin vulnerabilidades conocidas en dependencias productivas.
+- [x] 12/12 verificaciones del smoke test de seguridad contra un servicio local.
+- [x] IAM limitado por secreto activo y WIF restringido a repo, environment y
+  referencias `main`/tags `v*`.
+- [x] Procedimiento de rotación y modelo de amenazas documentados.
+
+### Pendiente de evidencia del entorno desplegado
+
+- [ ] Ejecutar `security_smoke.py` contra dev y producción.
+- [ ] Ejecutar canarios y confirmar ausencia de PII/secretos en Cloud Logging y
+  BigQuery.
+- [ ] Aplicar Terraform y revisar la política IAM efectiva con un segundo
+  responsable.
+- [ ] Ejecutar y registrar una rotación real de API keys y secretos.
+- [ ] Adjuntar evidencias de roles y endpoints verificados en producción.
+
+La fase no se considera cerrada hasta completar estas cinco verificaciones
+operativas. Ver `docs/SEGURIDAD.md` y `docs/MODELO_AMENAZAS.md`.
+
 ---
 
 ## Resumen de cambios por archivo
