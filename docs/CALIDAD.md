@@ -40,6 +40,18 @@ La cobertura global también está protegida localmente por `coverage.py`; Sonar
 evita que código nuevo reduzca la calidad aunque la media histórica permanezca
 alta.
 
+### Solución de `Falta el secreto SONAR_TOKEN`
+
+- Debe existir exactamente como `SONAR_TOKEN` en **Settings → Secrets and
+  variables → Actions → Repository secrets**; una variable o un secreto de
+  environment no es visible para el job actual.
+- Los secretos se cargan al iniciar el job. Si se creó después de un fallo,
+  hay que ejecutar **Re-run failed jobs** o provocar una nueva ejecución.
+- GitHub no entrega secretos a pull requests procedentes de forks. El análisis
+  de PR requiere que la rama pertenezca a este mismo repositorio.
+- El valor debe ser un token vigente generado en **SonarCloud → My Account →
+  Security**, con permiso de análisis sobre el proyecto.
+
 ## Dependabot
 
 Dependabot revisa semanalmente Python, GitHub Actions, Docker y proveedores de
