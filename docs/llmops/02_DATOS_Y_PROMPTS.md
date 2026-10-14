@@ -1,11 +1,14 @@
 # Fase 2 — Datos y Prompts
 
+> Revisión 14/10/2026: prompts versionados y saneamiento de PII activos. El
+> RAG productivo/vectorial y los datos reales de ServiceTonic siguen pendientes.
+
 ## Gestión de datos
 
 ### Fuentes de datos
 | Fuente | Uso | Modo |
 |--------|-----|------|
-| ServiceNow (incidentes) | Creación/actualización de tickets | LIVE / DEMO |
+| ServiceTonic | Tickets, SLA, KB, contactos y seguimiento | LIVE / MOCK |
 | Base de Conocimientos (KB) | Fuente RAG para respuestas | LIVE / DEMO |
 | Estructura organizacional | Búsqueda de manager para aprobaciones | LIVE / DEMO |
 | Active Directory | Diagnóstico y autoservicio (desbloqueo, contraseña) | LIVE / DEMO |

@@ -1,9 +1,20 @@
 # Requerimientos de ServiceTonic para la integración con el Help Desk Multiagente
 
+> **Estado 14/10/2026:** 🔴 bloqueante. No se ha recibido la documentación API,
+> sandbox, credenciales técnicas ni catálogos. No existe todavía
+> `ServiceTonicAdapter`; I5 e I6 no deben iniciarse contra supuestos. Ver
+> [estado consolidado](../ESTADO_DESARROLLO.md).
+
 > **Para:** administrador de ServiceTonic de la organización y/o contacto técnico del proveedor
 > **De:** equipo del Sistema Multiagente de Help Desk
 > **Contexto:** [Plan de Fase 2, incremento I0](../PLAN_FASE2_GOOGLE_CLOUD.md#i0--descubrimiento-y-prerrequisitos)
 > **Fecha:** 12 de octubre de 2026
+
+> Referencia funcional pública:
+> [ServiceTonic — aplicación de ticketing](https://www.servicetonic.com/es/ticketing-aplicacion/).
+> La página confirma ticketing omnicanal, automatización, SLA, reporting, base
+> de conocimiento e integraciones. No sustituye la documentación técnica de la
+> API, que continúa siendo un prerrequisito bloqueante.
 
 ---
 

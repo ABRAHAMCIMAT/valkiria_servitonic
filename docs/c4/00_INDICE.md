@@ -1,5 +1,9 @@
 # 📐 Arquitectura — Modelo C4
 
+> Actualizado el 14 de octubre de 2026. Los diagramas distinguen arquitectura
+> implementada de integraciones externas aún no activadas. Ver
+> [estado consolidado](../ESTADO_DESARROLLO.md).
+
 Documentación de la arquitectura del sistema usando el
 [Modelo C4](https://c4model.com) (Simon Brown): cuatro niveles de detalle
 progresivo, como el zoom de un mapa — cada nivel amplía al anterior sin

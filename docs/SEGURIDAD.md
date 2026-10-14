@@ -1,5 +1,8 @@
 # Seguridad — Fase 0
 
+> Estado 14/10/2026: código y pruebas locales completos; cierre operativo GCP
+> pendiente. Ver [OPERACION_SEGURIDAD_GCP.md](OPERACION_SEGURIDAD_GCP.md).
+
 Documentación de la capa de seguridad introducida en la Fase 0 del roadmap LLMOps.
 
 ## Autenticación
@@ -51,7 +54,7 @@ Retry-After: 42
 ```
 
 > **Nota:** el contador vive en memoria. Con varias réplicas debe moverse a
-> Redis (misma interfaz `RateLimiter.check`), previsto para la Fase 4.
+> Firestore o Memorystore (misma interfaz `RateLimiter.check`) antes de escalar.
 
 ## Redacción de PII
 
@@ -190,7 +193,7 @@ Después de aplicar Terraform, conservar como evidencia:
 gcloud projects get-iam-policy "$GCP_PROJECT" --format=json > iam-review.json
 gcloud secrets get-iam-policy api-keys --project "$GCP_PROJECT"
 gcloud iam service-accounts keys list \
-  --iam-account "snow-ma-run@$GCP_PROJECT.iam.gserviceaccount.com"
+  --iam-account "valkiria-run@$GCP_PROJECT.iam.gserviceaccount.com"
 ```
 
 La última consulta no debe mostrar claves administradas por el usuario.

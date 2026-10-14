@@ -1,7 +1,7 @@
-# Guía de despliegue — Contenedores
+# Guía de despliegue local — Contenedores
 
-> Sistema Multiagente ServiceNow · Fase 1
-> Última actualización: 21 de septiembre de 2026 · Versión 2.2.0
+> Valkiria ServiceTonic · Actualizada el 14 de octubre de 2026 · Versión 2.2.0.
+> Para el estado actual ver [ESTADO_DESARROLLO.md](ESTADO_DESARROLLO.md).
 
 Esta guía cubre el despliegue con Docker y Docker Compose. Al terminar la Fase 0,
 el sistema **falla al arrancar** si falta configuración de seguridad: es
@@ -53,8 +53,8 @@ Salida esperada del health: `{"status":"ok"}`
 
 ## 3. Variables obligatorias
 
-Estas dos variables **deben** estar definidas cuando `APP_ENV=production`
-(el valor por defecto en la imagen). El contenedor no arranca sin ellas.
+Estas dos variables **deben** estar definidas cuando `APP_ENV=production`.
+El contenedor no arranca sin ellas.
 
 | Variable | Formato | Ejemplo |
 |----------|---------|---------|
@@ -94,12 +94,12 @@ docker compose --profile live up -d
 Luego en Jan, configura el proveedor OpenAI-compatible apuntando a
 `http://localhost:8000/v1` con una credencial de rol `user`.
 
-### 4.3 ServiceNow real (modo LIVE)
+### 4.3 ServiceTonic real (modo LIVE)
 
 ```bash
-SNOW_INSTANCE=acme.service-now.com
-SNOW_USER=svc_lindy
-SNOW_PASSWORD=...        # o SNOW_TOKEN=...
+TICKETING_PROVIDER=servicetonic
+SERVICETONIC_BASE_URL=https://cliente.servicetonic.com/api/v1
+SERVICETONIC_API_TOKEN=...
 ```
 
 > En `production` el adaptador **exige** estar en modo LIVE. Si la configuración
@@ -123,7 +123,7 @@ Sin `LLM_API_KEY` el arranque falla (fail-fast de la Fase 0).
 2. Ajustes → Proveedores → OpenAI compatible.
 3. Base URL: `http://localhost:8000/v1`
 4. API key: una credencial con rol `user` (el rol más bajo basta).
-5. Modelo: `servicenow-multiagent`
+5. Modelo: `valkiria-servitonic`
 
 Jan podrá conversar con el sistema multiagente. El endpoint responde con el
 formato estándar de OpenAI, incluido streaming SSE.
@@ -144,14 +144,14 @@ El volumen `snow-data` monta en `/app/data` y contiene:
 Respaldo:
 
 ```bash
-docker run --rm -v servicenow-multiagent_snow-data:/data -v "$PWD:/backup" \
+docker run --rm -v valkiria-servitonic_data:/data -v "$PWD:/backup" \
   alpine tar czf /backup/snow-data-$(date +%F).tar.gz -C /data .
 ```
 
 Restauración:
 
 ```bash
-docker run --rm -v servicenow-multiagent_snow-data:/data -v "$PWD:/backup" \
+docker run --rm -v valkiria-servitonic_data:/data -v "$PWD:/backup" \
   alpine sh -c "cd /data && tar xzf /backup/snow-data-FECHA.tar.gz"
 ```
 
@@ -196,7 +196,7 @@ La imagen es multi-stage, así que el rebuild reutiliza la caché de wheels.
 | El contenedor muere al arrancar | Falta `API_KEYS` o `CORS_ORIGINS` | Defínelas en `.env` (comportamiento intencional) |
 | `CORS_ORIGINS` rechazado | Se usó `*` | Usa orígenes explícitos |
 | `RuntimeError: ... requiere su webhook` | `NOTIFY_CHANNEL` sin webhook, en producción | Configura `SLACK_WEBHOOK_URL` o cambia de canal |
-| `RuntimeError: ServiceNow debe estar en modo LIVE` | Config parcial en producción | Completa `SNOW_INSTANCE` + `SNOW_USER`/`SNOW_TOKEN`, o usa `APP_ENV=development` |
+| Adaptador ServiceTonic no disponible | Falta API/sandbox o configuración | Completa `SERVICETONIC_*` y valida el contrato antes de producción |
 | 401 en todas las peticiones | Credencial ausente o inválida | Envía `X-API-Key` o `Authorization: Bearer` |
 | 403 en un endpoint | Rol insuficiente | Usa una credencial con el rol requerido |
 | 429 | Rate limit excedido | Ajusta `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW` |
@@ -206,13 +206,12 @@ La imagen es multi-stage, así que el rebuild reutiliza la caché de wheels.
 
 ## 10. Notas de producción
 
-- **Rate limiting:** la implementación actual es en memoria. Con **varias
-  réplicas** hay que moverla a Redis para que el límite sea compartido. La
-  interfaz (`RateLimiter.check`) está pensada para ese cambio sin tocar endpoints.
-- **Secretos:** no los pongas en `docker-compose.yml`. Usa el gestor de secretos
-  de tu plataforma (Docker secrets, Kubernetes Secrets, AWS Secrets Manager).
-- **TLS:** el contenedor sirve HTTP. Termina TLS en un proxy inverso
-  (nginx, Traefik, ALB) por delante.
+- **Rate limiting:** la implementación actual es en memoria. Producción debe
+  usar Firestore o Memorystore para un límite compartido entre instancias.
+- **Secretos:** no los pongas en `docker-compose.yml`; producción utiliza
+  Google Secret Manager.
+- **TLS:** Cloud Load Balancing administra HTTPS y Cloud Armor protege el
+  perímetro delante de Cloud Run.
 - **Rotación de logs:** `app.log` rota a 5 MB × 5 archivos. El resto de archivos
   de `data/` requieren logrotate externo.
 - **Auditoría:** `audit.jsonl` es append-only por diseño. El actor se identifica

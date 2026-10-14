@@ -1,5 +1,8 @@
 # Fase 7 — Guardrails, Seguridad y Control de Errores
 
+> Revisión 14/10/2026: auth, RBAC, CORS, rate limiting, auditoría, redacción y
+> smoke tests están implementados. Falta evidencia contra dev/prod y rotación real.
+
 ## Guardrails (`backend/llmops/guardrails.py`)
 
 Protegen el sistema contra entradas maliciosas o malformadas y salidas no
@@ -80,7 +83,7 @@ servidor **no arranca** sin `API_KEYS` ni `CORS_ORIGINS` explícitas
 ### Rate limiting (`security/rate_limit.py`)
 Ventana deslizante en memoria por credencial (o IP si es anónimo),
 configurable con `RATE_LIMIT_MAX`/`RATE_LIMIT_WINDOW` (default 60/60s).
-Para producción multi-réplica, mover a un backend compartido (Redis) — la
+Para producción multi-réplica, mover a Firestore o Memorystore — la
 interfaz (`RateLimiter.check`) se mantiene igual.
 
 ### Redacción de PII (`security/redaction.py`)

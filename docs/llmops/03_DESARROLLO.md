@@ -1,5 +1,9 @@
 # Fase 3 — Desarrollo
 
+> Revisión 14/10/2026: arquitectura modular, puertos, fábrica, Vertex,
+> Firestore y Teams implementados. El contrato productivo objetivo es
+> ServiceTonic y cualquier identificador heredado debe retirarse en I1.
+
 > Esta página resume la arquitectura desde el punto de vista de desarrollo.
 > Para el modelo C4 completo (Contexto → Contenedores → Componentes →
 > Código, con diagramas), ver [docs/c4/00_INDICE.md](../c4/00_INDICE.md).
@@ -48,7 +52,7 @@ red de seguridad ante regresiones de código.
 │  Observabilidad (telemetría, Langfuse,      │
 │  dashboard)                                 │
 ├─────────────────────────────────────────────┤
-│  Adapters (ServiceNow, Notificaciones, LLM) │
+│  Adapters (ServiceTonic, Teams, Vertex AI)  │
 └─────────────────────────────────────────────┘
 ```
 
@@ -56,7 +60,7 @@ red de seguridad ante regresiones de código.
 ```
 backend/
 ├── agents/          # Agentes especializados
-├── adapters/        # ServiceNow, notificaciones
+├── adapters/        # ServiceTonic, Teams y puertos externos
 ├── core/            # LLM, modelos, estado, ConversationStorage
 ├── security/        # Auth RBAC, rate limit, redacción PII, audit trail
 ├── llmops/          # Mejores prácticas LLMOps
@@ -73,13 +77,13 @@ backend/
     `LLM_PROVIDER=openai` sin `LLM_API_KEY`; y en `config.py` si
     `APP_ENV=production` sin `API_KEYS`/`CORS_ORIGINS`.
   - `RetryableError` / `ProviderError`: `OpenAICompatLLM.complete()`
-    (core/llm.py) y `ServiceNowAdapter._request()` (adapters/servicenow.py)
+    (`core/llm.py`) y el adaptador REST de ServiceTonic
     las lanzan según el código de estado HTTP.
   - `AgentError`: `CoordinatorAgent._run()` envuelve cualquier fallo
     inesperado de un agente que no sea ya un `LLMOpsError`.
   - `ValidationError`: guardrails de entrada/salida.
 - **Reintentos con backoff exponencial + jitter** para errores transitorios:
-  aplica a las llamadas HTTP reales al proveedor LLM y a ServiceNow
+  aplica a las llamadas HTTP reales a Vertex AI y ServiceTonic
   (timeout, error de red, 429, 5xx → reintenta; 4xx → falla directo, sin
   reintentar).
 - **Degradación elegante** con `safe_call` para pasos no críticos.

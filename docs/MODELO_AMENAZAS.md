@@ -1,5 +1,8 @@
 # Modelo de amenazas — GCP, ServiceTonic y Microsoft 365
 
+> Revisión 14/10/2026: controles de aplicación implementados; controles cloud
+> definidos como código y pendientes de materialización/evidencia.
+
 > Alcance: API multiagente desplegada en Cloud Run y sus integraciones.
 > Método: STRIDE simplificado. Revisar antes de cada corte a producción y al
 > incorporar un proveedor o flujo de datos nuevo.
