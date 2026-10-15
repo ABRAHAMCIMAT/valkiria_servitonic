@@ -33,12 +33,12 @@ integración ServiceTonic, por lo que no está lista para producción.
 |---|---|---|
 | Fase 0 — Seguridad | 🟡 85 % | Código completo; falta evidencia dev/prod, IAM efectivo y rotaciones reales |
 | Fase 1 — CI y pruebas | ✅ | CI, Docker, Sonar, Dependabot, 508 pruebas, cobertura >90 % |
-| I0 — Descubrimiento | 🔴 | No existen proyectos GCP; faltan ServiceTonic y Entra ID |
+| I0 — Descubrimiento | 🟡 | OpenAPI ServiceTonic confirmado; faltan credenciales/catálogos, GCP y Entra ID |
 | I1 — Puertos | 🟡 | Protocolos/fábrica listos; quedan referencias `self.snow` y contrato legado |
 | I2 — Vertex AI | 🟡 | Proveedor y tokens listos; falta evaluación real con Gemini |
 | I3 — Cloud Run | 🟡 | Terraform/WIF/workflow listos; sin infraestructura aplicada |
 | I4 — Firestore/Logging | 🟡 | Código e IaC listos; falta validación multiinstancia y sinks reales |
-| I5 — ServiceTonic tickets | 🔴 | Adaptador no implementado; bloqueado por API/sandbox |
+| I5 — ServiceTonic tickets | 🟡 | API viable; faltan `idProject`, agente técnico, campos y adaptador |
 | I6 — KB/Graph/autoservicio | 🔴 | No iniciado; depende de I5 y decisiones de integración |
 | I7 — Teams | 🟡 | Bot, tarjetas y callbacks listos; falta tenant y prueba real |
 | I8 — Producción | ⚪ | Hardening, carga, piloto, corte y limpieza pendientes |
@@ -63,7 +63,7 @@ integración ServiceTonic, por lo que no está lista para producción.
 
 1. Las acciones LIVE de autoservicio no deben habilitarse hasta contar con un
    ejecutor real y confirmación registrada en ServiceTonic.
-2. ServiceTonic no tiene contrato API validado.
+2. El contrato OpenAPI está validado, pero faltan campos/catálogos específicos de Valtre.
 3. No se han ejecutado evaluaciones comparativas reales con Vertex AI.
 4. No existen aún proyectos GCP, datos de Cloud Logging ni BigQuery reales.
 5. El rate limit es por instancia, no global.

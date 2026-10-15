@@ -5,6 +5,8 @@ Runs a set of representative conversations through the traced coordinator so
 the four-dimension dashboard has data to display. Works in demo mode (mock
 LLM, no credentials) and emits standardized JSON telemetry.
 """
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import os
@@ -12,10 +14,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.core.llm import LLM, LLMConfig
-from backend.adapters.servicenow import ServiceNowAdapter
 from backend.adapters.notifications import NotificationAdapter
+from backend.adapters.servicenow import ServiceNowAdapter
 from backend.agents.coordinator import CoordinatorAgent
+from backend.core.llm import LLM, LLMConfig
 from backend.observability.telemetry import Telemetry
 from backend.observability.traced_coordinator import TracedCoordinator
 
@@ -55,18 +57,24 @@ def main():
 
     # Print a summary of the four dimensions
     from backend.observability.metrics import MetricsEngine
+
     engine = MetricsEngine()
     report = engine.full_report()
     print("\n=== RESUMEN 4 DIMENSIONES ===")
-    print(f"Negocio: {report['business']['total_interactions']} interacciones, "
-          f"FCR {report['business']['fcr_rate']}%, MTTR {report['business']['mttr_seconds']}s")
-    print(f"Rendimiento: E2E {report['performance']['e2e_latency_seconds']}s, "
-          f"RAG hit {report['performance']['rag_hit_rate']}%")
-    print(f"Costos: ${report['costs']['total_cost_usd']} total, "
-          f"{report['costs']['total_tokens']} tokens")
-    print(f"Orquestación: escalación {report['orchestration']['escalation_rate']}%, "
-          f"awaiting {report['orchestration']['awaiting_approval_count']}, "
-          f"abandono {report['orchestration']['abandonment_rate']}%")
+    print(
+        f"Negocio: {report['business']['total_interactions']} interacciones, "
+        f"FCR {report['business']['fcr_rate']}%, MTTR {report['business']['mttr_seconds']}s"
+    )
+    print(
+        f"Rendimiento: E2E {report['performance']['e2e_latency_seconds']}s, "
+        f"RAG hit {report['performance']['rag_hit_rate']}%"
+    )
+    print(f"Costos: ${report['costs']['total_cost_usd']} total, {report['costs']['total_tokens']} tokens")
+    print(
+        f"Orquestación: escalación {report['orchestration']['escalation_rate']}%, "
+        f"awaiting {report['orchestration']['awaiting_approval_count']}, "
+        f"abandono {report['orchestration']['abandonment_rate']}%"
+    )
 
 
 if __name__ == "__main__":

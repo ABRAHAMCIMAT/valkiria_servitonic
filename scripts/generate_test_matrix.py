@@ -10,6 +10,7 @@ Uso:
     python3 scripts/generate_test_matrix.py --target clasificador --count 15
     python3 scripts/generate_test_matrix.py --target guardrails_entrada --count 30 --out /tmp/casos.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -29,10 +30,17 @@ def main() -> int:
         description="Genera una matriz de pruebas (positivas/negativas/de borde) para un agente o endpoint."
     )
     parser.add_argument("--target", help="Clave del objetivo a probar (ver --list-targets).")
-    parser.add_argument("--count", type=int, default=15,
-                        help=f"Número de casos a generar, máx. {MAX_BATCH_SIZE} (default: 15).")
-    parser.add_argument("--out", default=None,
-                        help="Ruta del archivo JSON de salida (default: DATA_DIR/test_matrix_<target>.json).")
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=15,
+        help=f"Número de casos a generar, máx. {MAX_BATCH_SIZE} (default: 15).",
+    )
+    parser.add_argument(
+        "--out",
+        default=None,
+        help="Ruta del archivo JSON de salida (default: DATA_DIR/test_matrix_<target>.json).",
+    )
     parser.add_argument("--list-targets", action="store_true", help="Lista los objetivos disponibles y sale.")
     args = parser.parse_args()
 

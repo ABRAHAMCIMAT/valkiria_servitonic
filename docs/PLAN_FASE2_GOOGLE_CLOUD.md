@@ -13,12 +13,12 @@ registro y completar aprobaciones interactivas en Teams.
 
 | Incremento | Estado | Pendiente principal |
 |---|---|---|
-| I0 — Prerrequisitos | 🔴 | Proyecto GCP, API/sandbox ServiceTonic y Entra ID |
+| I0 — Prerrequisitos | 🟡 | OpenAPI confirmado; faltan credenciales/catálogos, proyecto GCP y Entra ID |
 | I1 — Puertos | 🟡 | Completar nombres/contrato neutrales y adaptador demo |
 | I2 — Vertex AI | 🟡 | Evaluaciones reales con Gemini |
 | I3 — Cloud Run | 🟡 | Ejecutar bootstrap y aplicar Terraform |
 | I4 — Firestore/observabilidad | 🟡 | Validación multiinstancia, Logging y BigQuery |
-| I5 — Tickets ServiceTonic | 🔴 | Implementar adaptador lectura/escritura |
+| I5 — Tickets ServiceTonic | 🟡 | Implementar adaptador y validar contra Valtre |
 | I6 — KB/contactos/acciones | 🔴 | RAG, Graph y ejecutores reales |
 | I7 — Teams | 🟡 | Crear bot/app, instalar y probar en tenant |
 | I8 — Producción | ⚪ | Hardening, carga, piloto y corte |

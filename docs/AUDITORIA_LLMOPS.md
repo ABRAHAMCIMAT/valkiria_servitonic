@@ -48,7 +48,7 @@ proyectos GCP ni las credenciales externas.
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| API ServiceTonic sin contrato confirmado | Alto | Sandbox, OpenAPI/Postman y pruebas contractuales |
+| Campos/catálogos Valtre sin confirmar | Alto | Agente técnico, inventario y pruebas contractuales de OpenAPI v1 |
 | Acciones de autoservicio sin ejecutor real | Alto | Convertir en ticket hasta confirmar ejecución |
 | PII en proveedores externos | Alto | Minimización, saneamiento, IAM y residencia de datos |
 | Tenant Teams no autorizado | Alto | Aprobación administrativa y plan de instalación |
