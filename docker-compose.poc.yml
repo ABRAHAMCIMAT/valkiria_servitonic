@@ -1,0 +1,10 @@
+services:
+  api:
+    environment:
+      APP_ENV: staging
+      LLM_PROVIDER: mock
+      STORAGE_BACKEND: file
+      TICKETING_PROVIDER: servicetonic
+      NOTIFY_CHANNEL: teams
+      LOG_USER_CONTENT: "false"
+    command: ["python", "-m", "backend.server"]

@@ -1,6 +1,6 @@
 # Calidad de software
 
-> Estado 15/10/2026: ✅ puerta local validada con 515 pruebas y 91.19 % de
+> Estado 15/10/2026: ✅ puerta local validada con 527 pruebas y 91.16 % de
 > cobertura. SonarCloud está integrado al workflow; su Quality Gate se
 > administra en la organización externa.
 

@@ -1,6 +1,11 @@
-# ServiceNow Multi-Agent Conversational System
+# Valkiria ServiceTonic — PoC local
 
-Sistema multiagente conversacional que resuelve los problemas de un servicio de ServiceNow: **triaje y enrutamiento inteligente, autoservicio (Nivel 0/1), orquestación de aprobaciones, ciclo de vida del ticket y escalación a agentes humanos (Nivel 2/3)** — todo desde una conversación en lenguaje natural.
+Prueba de concepto local enfocada en dos capacidades: **gestión de tickets en
+ServiceTonic** y **aprobaciones interactivas en Microsoft Teams**. Se ejecuta
+con Docker, LLM mock determinista y persistencia local. Google Cloud queda fuera
+del alcance del PoC.
+
+Guía: [docs/POC_LOCAL.md](docs/POC_LOCAL.md).
 
 ## 🧠 Arquitectura Multiagente
 
@@ -15,7 +20,7 @@ Sistema multiagente conversacional que resuelve los problemas de un servicio de 
                   │
                   ├──> ⚡ Agente de Ejecución (autoservicio: AD, contraseñas, licencias)
                   │
-                  ├──> 📚 Agente de Conocimiento (RAG sobre la KB de ServiceNow)
+                  ├──> 📚 Agente de Conocimiento (fuera del alcance productivo del PoC)
                   │
                   ├──> 🔄 Agente de Seguimiento (actualizaciones proactivas del ticket)
                   │
@@ -33,14 +38,9 @@ Sistema multiagente conversacional que resuelve los problemas de un servicio de 
 
 | # | Problema | Solución |
 |---|----------|----------|
-| 1 | Categorización errónea | El **Clasificador** analiza el texto libre, identifica la intención y asigna categoría/subcategoría/Assignment Group sin intervención humana |
-| 1 | Incidentes críticos sepultados | **Priorización SLA** por impacto, urgencia, sentimiento y palabras clave |
-| 2 | Enlaces en vez de respuestas | El **Agente de Conocimiento (RAG)** extrae la respuesta exacta y la explica paso a paso |
-| 2 | Tareas manuales repetitivas | El **Agente de Ejecución** desbloquea cuentas AD, restablece contraseñas y asigna licencias desde el chat |
-| 3 | Cuellos de botella en aprobaciones | El **Coordinador** busca al manager en la org de ServiceNow y envía notificación push (Slack/Teams/WhatsApp) con aprobación en tiempo real |
-| 4 | Falta de actualizaciones | El **Agente de Seguimiento** notifica cambios de estado y notas |
-| 4 | Documentación deficiente | **Resolution Notes** estructuradas al cerrar el caso |
-| 5 | Transferencias frías | El **Agente de Escalación** entrega un resumen ejecutivo del diagnóstico al técnico humano |
+| 1 | Registro manual de solicitudes | Clasifica y crea el ticket en ServiceTonic |
+| 2 | Falta de trazabilidad | Consulta, comenta y actualiza el ticket por API |
+| 3 | Cuellos de botella en aprobaciones | Envía una Adaptive Card al manager en Teams y reanuda el ticket |
 
 ## 🚀 Inicio rápido (demo, sin credenciales)
 
@@ -65,19 +65,23 @@ El backend expone un **endpoint compatible con OpenAI** en `http://localhost:800
 2. Configura:
    - **Base URL:** `http://localhost:8000/v1`
    - **API Key:** el valor de tu credencial `API_KEYS` (ver Seguridad más abajo) — Jan la envía como `Authorization: Bearer <valor>`.
-   - **Model:** `servicenow-multiagent`
+   - **Model:** `valkiria-servicetonic`
 3. Selecciona el modelo en el chat de Jan y conversa con el sistema multiagente.
 
 > Jan también puede ejecutar el LLM localmente (servidor `localhost:1337`) y este sistema lo usa como proveedor de razonamiento para los agentes.
 
-## ☁️ Google Cloud y Microsoft Teams (Fase 2)
+## 🧪 PoC local: ServiceTonic + Microsoft Teams
 
-En curso en la rama `feature/integracion-google-cloud` ([plan incremental](docs/PLAN_FASE2_GOOGLE_CLOUD.md)):
+```bash
+cp .env.poc.example .env.poc
+# completar credenciales y mapeos
+make poc-up
+```
 
-- **Vertex AI (Gemini)** como LLM: `LLM_PROVIDER=vertex`, sin API key (credenciales de Google Cloud).
-- **Cloud Run** + Artifact Registry + Secret Manager + Firestore + Cloud Logging/BigQuery, con Terraform en [infra/terraform/](infra/terraform/) y despliegue desde GitHub Actions. Guía: [docs/DESPLIEGUE_GCP.md](docs/DESPLIEGUE_GCP.md).
-- **Microsoft Teams** en lugar de Slack: aprobaciones interactivas que reanudan la conversación. Guía: [docs/integraciones/TEAMS.md](docs/integraciones/TEAMS.md).
-- **ServiceTonic** sustituirá a ServiceNow cuando se cubran sus [requerimientos](docs/integraciones/SERVICETONIC_REQUERIMIENTOS.md); mientras tanto el sistema sigue usando ServiceNow.
+- ServiceTonic: tickets y trazabilidad mediante REST API v1.
+- Teams Bot: Adaptive Cards con Aprobar/Rechazar.
+- Túnel HTTPS temporal: callback local de Bot Framework.
+- Mock LLM: flujo reproducible sin infraestructura cloud.
 
 ## 🔐 Seguridad (Fase 0)
 
@@ -106,7 +110,7 @@ el dashboard y genera matrices de pruebas; `admin` además ve
 
 | Variable | Descripción | Default |
 |----------|-------------|---------|
-| `LLM_PROVIDER` | `jan` \| `openai` \| `mock` | `jan` |
+| `LLM_PROVIDER` | `mock` para el PoC (`jan`/`openai` opcionales) | `mock` |
 | `LLM_BASE_URL` | URL del LLM compatible con OpenAI | `http://localhost:1337/v1` |
 | `LLM_MODEL` | Modelo a usar | `gpt-oss:latest` |
 | `LLM_API_KEY` | Clave para el proveedor LLM (obligatoria si `LLM_PROVIDER=openai`) | — |
@@ -119,35 +123,26 @@ el dashboard y genera matrices de pruebas; `admin` además ve
 | `DATA_DIR` | Directorio de datos (logs, telemetría, conversaciones, auditoría) | `backend/data` |
 | `TELEMETRY_MAX_EVENTS` | Límite de eventos en memoria del buffer de telemetría | `5000` |
 | `ENABLE_LLM_JUDGE` | Activa el check LLM-as-judge en el Agente de Conocimiento (llamada LLM extra) | `false` |
-| `SNOW_INSTANCE` | Instancia de ServiceNow (vacío = demo) | — |
-| `SNOW_USER` / `SNOW_PASSWORD` / `SNOW_TOKEN` | Credenciales ServiceNow | — |
-| `NOTIFY_CHANNEL` | `slack` \| `teams` \| `whatsapp` | `slack` |
-| `SLACK_WEBHOOK_URL` | Webhook de Slack | — |
-| `TEAMS_WEBHOOK_URL` | Webhook de Teams | — |
-| `WHATSAPP_API_URL` | API de WhatsApp | — |
+| `SERVICETONIC_BASE_URL` / `SERVICETONIC_PROJECT_ID` | Servidor y servicio de pruebas | — |
+| `SERVICETONIC_USERNAME` / `SERVICETONIC_PASSWORD` | Agente técnico | — |
+| `SERVICETONIC_TEAM` / `SERVICETONIC_FIELD_MAP` | Equipo y mapeo de plantilla | — |
+| `NOTIFY_CHANNEL` | `teams` | `teams` |
+| `TEAMS_BOT_APP_ID` / `TEAMS_BOT_APP_PASSWORD` / `TEAMS_TENANT_ID` | Bot interactivo | — |
 
 Copia `.env.example` a `.env` para arrancar con todos los defaults de modo demo.
 
-### Modo live
+### PoC integrado
 
 ```bash
-export LLM_PROVIDER=jan
-export APP_ENV=production
-export API_KEYS="clave_admin:admin"
-export CORS_ORIGINS="https://tu-dominio.com"
-export SNOW_INSTANCE=tuinstancia
-export SNOW_USER=admin
-export SNOW_PASSWORD=...
-export NOTIFY_CHANNEL=slack
-export SLACK_WEBHOOK_URL=https://hooks.slack.com/...
-./scripts/run_live.sh
+cp .env.poc.example .env.poc
+# completar ServiceTonic, Teams y API_KEYS
+make poc-up
 ```
 
-### Docker (recomendado para producción)
+### Docker local
 
 ```bash
-cp .env.example .env   # o exporta API_KEYS/CORS_ORIGINS a mano
-docker compose up --build
+make poc-up
 ```
 
 Imagen multi-stage (< 300 MB), usuario sin privilegios, healthcheck
@@ -156,11 +151,11 @@ integrado. Ver [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 ## 📁 Estructura
 
 ```
-servicenow-multiagent/
+valkiria_servitonic/
 ├── backend/
 │   ├── core/          # LLM, modelos, estado, ConversationStorage
 │   ├── agents/        # 8 agentes especializados
-│   ├── adapters/      # ServiceNow, notificaciones
+│   ├── adapters/      # ServiceTonic, Teams y puertos
 │   ├── security/       # Auth RBAC, rate limit, redacción PII, audit trail
 │   ├── llmops/         # Prompts, evals, guardrails, errores, patrones
 │   ├── config.py       # Configuración centralizada por entorno

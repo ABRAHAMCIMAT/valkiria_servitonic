@@ -7,8 +7,8 @@
 - Docker multi-stage y usuario no-root.
 - Docker Compose para desarrollo.
 - GitHub Actions en Python 3.11/3.12.
-- 508 pruebas unitarias, integración y E2E.
-- Cobertura 91.19 %, umbral estricto >90 %.
+- 527 pruebas unitarias, integración y E2E.
+- Cobertura 91.16 %, umbral estricto >90 %.
 - Ruff, Mypy, Bandit y `pip-audit`.
 - SonarCloud Quality Gate.
 - Dependabot para Python, Actions, Docker y Terraform.

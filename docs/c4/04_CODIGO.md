@@ -5,9 +5,9 @@
 ```mermaid
 sequenceDiagram
     actor U as Usuario
-    participant API as Cloud Run / FastAPI
+    participant API as Docker local / FastAPI
     participant C as Coordinador
-    participant V as Vertex AI
+    participant V as Mock LLM
     participant ST as ServiceTonic
     participant FS as Firestore
 
@@ -58,4 +58,4 @@ in_progress → escalated
 - `NotifierPort`: avisos y aprobaciones Teams.
 - `ConversationStorage`: persistencia de conversaciones.
 - `ApprovalStorage`: persistencia y decisión idempotente.
-- `LLM`: proveedor Vertex AI o mock en pruebas.
+- `LLM`: proveedor mock determinista durante el PoC.

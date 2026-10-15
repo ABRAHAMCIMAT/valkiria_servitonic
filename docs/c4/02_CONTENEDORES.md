@@ -6,14 +6,11 @@ C4Container
     Person(usuario, "Usuario")
     Person(manager, "Manager")
 
-    System_Boundary(gcp, "Google Cloud") {
-        Container(api, "Valkiria API", "Cloud Run / FastAPI", "Chat, agentes, callbacks, dashboard")
-        ContainerDb(state, "Estado durable", "Firestore", "Conversaciones y aprobaciones")
-        Container(llm, "Gemini", "Vertex AI", "Clasificación y síntesis")
-        ContainerDb(logs, "Observabilidad", "Cloud Logging + BigQuery", "Logs, auditoría, telemetría y KPIs")
-        Container(secrets, "Secretos", "Secret Manager", "API keys y credenciales externas")
-        Container(images, "Imágenes", "Artifact Registry", "Contenedores versionados")
-        Container(scheduler, "Automatización", "Cloud Scheduler", "Recordatorios, expiraciones y jobs")
+    System_Boundary(local, "Equipo local / Docker") {
+        Container(api, "Valkiria API", "Docker / FastAPI", "Chat, agentes, callbacks y dashboard")
+        ContainerDb(state, "Estado PoC", "Archivo + memoria", "Conversaciones y aprobaciones de una instancia")
+        Container(llm, "Mock LLM", "Python", "Clasificación determinista")
+        ContainerDb(logs, "Observabilidad local", "JSONL", "Logs, auditoría y telemetría")
     }
 
     System_Ext(servicetonic, "ServiceTonic")
@@ -26,9 +23,6 @@ C4Container
     Rel(api, state, "Lee/escribe")
     Rel(api, llm, "Inferencia")
     Rel(api, logs, "Emite JSON saneado")
-    Rel(secrets, api, "Inyecta versiones")
-    Rel(images, api, "Despliega")
-    Rel(scheduler, api, "Invoca jobs")
 ```
 
 ## Despliegue local

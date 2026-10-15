@@ -5,6 +5,9 @@
 
 ## Resumen ejecutivo
 
+El alcance vigente se redujo a un PoC local con ServiceTonic y Microsoft
+Teams. Google Cloud queda diferido y ya no bloquea la demostración.
+
 Valkiria es un sistema multiagente de soporte TI con API FastAPI, endpoint
 OpenAI-compatible, seguridad RBAC, observabilidad, dashboard, pruebas
 automatizadas e infraestructura como código para Google Cloud. La aplicación
@@ -16,8 +19,8 @@ integración ServiceTonic, por lo que no está lista para producción.
 
 | Indicador | Estado |
 |---|---:|
-| Pruebas automatizadas | **508 aprobadas** |
-| Cobertura total | **91.19 %** |
+| Pruebas automatizadas | **527 aprobadas** |
+| Cobertura total | **91.16 %** |
 | Umbral de cobertura | **> 90 %** |
 | Ruff | Verde |
 | Mypy | Verde, 49 archivos |
@@ -32,7 +35,7 @@ integración ServiceTonic, por lo que no está lista para producción.
 | Incremento | Estado real | Resultado/pending |
 |---|---|---|
 | Fase 0 — Seguridad | 🟡 85 % | Código completo; falta evidencia dev/prod, IAM efectivo y rotaciones reales |
-| Fase 1 — CI y pruebas | ✅ | CI, Docker, Sonar, Dependabot, 508 pruebas, cobertura >90 % |
+| Fase 1 — CI y pruebas | ✅ | CI, Docker, Sonar, Dependabot, 527 pruebas, cobertura >90 % |
 | I0 — Descubrimiento | 🟡 | OpenAPI ServiceTonic confirmado; faltan credenciales/catálogos, GCP y Entra ID |
 | I1 — Puertos | 🟡 | Protocolos/fábrica listos; quedan referencias `self.snow` y contrato legado |
 | I2 — Vertex AI | 🟡 | Proveedor y tokens listos; falta evaluación real con Gemini |
@@ -72,10 +75,10 @@ integración ServiceTonic, por lo que no está lista para producción.
 
 ## Siguiente camino crítico
 
-1. Crear proyecto GCP dev, facturación, bucket de estado y WIF.
-2. Cargar API keys iniciales y aplicar Terraform dev.
-3. Desplegar Cloud Run y ejecutar auditoría/canarios.
-4. Validar Vertex AI, Firestore, Logging y BigQuery.
-5. Configurar Entra ID/Teams y ejecutar aprobación real.
-6. Obtener API/sandbox de ServiceTonic e implementar I5–I6.
-7. Ejecutar I8 y piloto de producción.
+1. Confirmar campos, equipo y contacto de pruebas ServiceTonic.
+2. Ejecutar probe contractual de solo lectura.
+3. Validar creación/actualización de un ticket PoC.
+4. Configurar Entra ID, Azure Bot y app Teams.
+5. Publicar temporalmente el callback local mediante túnel HTTPS.
+6. Ejecutar aprobación y rechazo de extremo a extremo.
+7. Documentar evidencia y cerrar el PoC.

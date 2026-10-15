@@ -13,7 +13,7 @@ proyectos GCP ni las credenciales externas.
 | Componente | Estado | Evidencia/pending |
 |---|---|---|
 | Seguridad | 🟡 Alto | RBAC, CORS, rate limit, auditoría y redacción listos; falta evidencia cloud |
-| Calidad | ✅ Alto | 508 pruebas, 91.19 %, Ruff, Mypy, Sonar y Dependabot |
+| Calidad | ✅ Alto | 527 pruebas, 91.16 %, Ruff, Mypy, Sonar y Dependabot |
 | Despliegue | 🟡 Medio | Docker/Terraform/WIF listos; GCP sin materializar |
 | Observabilidad | 🟡 Medio-alto | Telemetría/dashboard listos; sinks y alertas sin validar |
 | Gestión de modelos | 🟡 Medio | Vertex implementado; evaluación real pendiente |

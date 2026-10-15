@@ -1,8 +1,8 @@
 # Arquitectura de Valkiria ServiceTonic
 
-> Arquitectura objetivo actualizada el 14 de octubre de 2026. ServiceTonic es
-> el sistema único de ticketing; Microsoft Teams es el canal único de
-> aprobaciones; Google Cloud es la plataforma de ejecución y operación.
+> Arquitectura del PoC actualizada el 15 de octubre de 2026. ServiceTonic es
+> el sistema de ticketing, Microsoft Teams gestiona aprobaciones y la aplicación
+> se despliega localmente con Docker.
 
 ## Visión general
 
@@ -10,38 +10,29 @@ Valkiria recibe solicitudes de soporte en lenguaje natural, las clasifica,
 consulta conocimiento, crea o actualiza tickets en
 [ServiceTonic](https://www.servicetonic.com/es/ticketing-aplicacion/), aplica
 políticas, solicita aprobaciones en Microsoft Teams y escala a soporte humano
-con contexto. La plataforma se despliega en Google Cloud sin llaves JSON.
+con contexto. El PoC usa un LLM mock y persistencia local para reducir alcance.
 
 ```mermaid
 flowchart LR
-    U[Usuario] --> CR[Cloud Run · API Valkiria]
-    T[Microsoft Teams] <--> CR
-    CR <--> ST[ServiceTonic · Ticketing/KB/SLA]
-    CR --> V[Vertex AI · Gemini]
-    CR <--> FS[Firestore]
-    CR --> CL[Cloud Logging]
-    CL --> BQ[BigQuery]
-    SM[Secret Manager] --> CR
-    GH[GitHub Actions] -->|WIF| AR[Artifact Registry]
-    AR --> CR
-    SCH[Cloud Scheduler] --> CR
+    U[Usuario] --> API[Docker local · FastAPI]
+    API <--> ST[ServiceTonic]
+    API <--> T[Microsoft Teams]
+    M[Manager] <--> T
+    T -->|Bot Framework + túnel HTTPS| API
+    API --> L[Archivos locales / memoria]
 ```
 
-## Stack tecnológico de Google Cloud
+## Stack del PoC
 
-| Servicio | Responsabilidad |
+| Componente | Responsabilidad |
 |---|---|
-| Cloud Run | API FastAPI, frontend y dashboard |
-| Vertex AI | Gemini para clasificación, síntesis y evaluaciones |
-| Firestore | Conversaciones y aprobaciones multiinstancia |
-| Secret Manager | API keys, token ServiceTonic y secreto del bot |
-| Artifact Registry | Imágenes de contenedor |
-| Cloud Logging | Logs estructurados y auditoría |
-| BigQuery | Histórico de telemetría, costos y KPIs |
-| Cloud Monitoring | Alertas, latencia, errores y disponibilidad |
-| Cloud Scheduler | Recordatorios y expiración de aprobaciones |
-| IAM + WIF | Identidad de runtime y despliegue sin llaves JSON |
-| Cloud Armor + Load Balancing | Protección perimetral prevista para producción |
+| Docker Compose | Ejecución local reproducible |
+| FastAPI/Uvicorn | API, callbacks y frontend |
+| Mock LLM | Orquestación determinista |
+| Archivo/memoria | Conversaciones y aprobaciones de una instancia |
+| ServiceTonic REST API | Tickets y trazabilidad |
+| Teams Bot/Graph | Adaptive Cards y decisiones |
+| Túnel HTTPS | Callback temporal hacia el equipo local |
 
 ## Componentes de aplicación
 
@@ -72,9 +63,8 @@ aprobar o rechazar y el callback reanuda la conversación de forma idempotente.
 
 ### Google Cloud
 
-Plataforma única de cómputo, IA, persistencia, secretos, observabilidad,
-automatización y seguridad. GitHub Actions se autentica mediante Workload
-Identity Federation.
+Fuera del alcance del PoC. Se conserva como alternativa de industrialización
+posterior, sin afectar la demostración local.
 
 ## Principios
 

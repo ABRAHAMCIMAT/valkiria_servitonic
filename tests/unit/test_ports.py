@@ -64,12 +64,12 @@ def test_factory_defaults(monkeypatch):
     assert isinstance(factory.build_approval_store(), InMemoryApprovalStore)
 
 
-def test_factory_slack_channel_uses_legacy_adapter(monkeypatch):
+def test_factory_rejects_non_teams_channel(monkeypatch):
     from backend.adapters import factory
-    from backend.adapters.notifications import NotificationAdapter
 
     monkeypatch.setenv("NOTIFY_CHANNEL", "slack")
-    assert isinstance(factory.build_notifier(), NotificationAdapter)
+    with pytest.raises(RuntimeError, match="use 'teams'"):
+        factory.build_notifier()
 
 
 @pytest.mark.parametrize(

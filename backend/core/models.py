@@ -60,7 +60,7 @@ class Classification:
 
 @dataclass
 class Ticket:
-    """A ticketing-system incident / request record (ServiceNow hoy)."""
+    """Registro neutral de incidente o solicitud del sistema de ticketing."""
 
     number: str = ""
     short_description: str = ""
