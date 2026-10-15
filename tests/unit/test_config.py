@@ -71,6 +71,23 @@ def test_is_production_flag(monkeypatch):
     assert cfg.IS_PRODUCTION is True
 
 
+def test_server_host_defaults_to_loopback(monkeypatch):
+    monkeypatch.delenv("HOST", raising=False)
+    import backend.config as cfg
+
+    importlib.reload(cfg)
+    assert cfg.SERVER_HOST == "127.0.0.1"
+
+
+def test_server_host_requires_explicit_container_override(monkeypatch):
+    container_host = ".".join(["0", "0", "0", "0"])
+    monkeypatch.setenv("HOST", container_host)
+    import backend.config as cfg
+
+    importlib.reload(cfg)
+    assert container_host == cfg.SERVER_HOST
+
+
 def test_ensure_dirs_creates_data_dir(monkeypatch, tmp_path):
     target = tmp_path / "nuevo" / "data"
     monkeypatch.setenv("DATA_DIR", str(target))

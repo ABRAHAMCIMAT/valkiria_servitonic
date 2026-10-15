@@ -14,6 +14,10 @@ from pathlib import Path
 
 APP_ENV = os.getenv("APP_ENV", "development")
 
+# Escucha solo en loopback por defecto. Los contenedores deben declarar
+# explícitamente HOST para publicar el servicio en su interfaz de red.
+SERVER_HOST = os.getenv("HOST", "127.0.0.1").strip() or "127.0.0.1"
+
 # Raiz de datos: relativa y configurable. Por defecto, backend/data del proyecto.
 _PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = Path(os.getenv("DATA_DIR", str(_PROJECT_ROOT / "data")))
