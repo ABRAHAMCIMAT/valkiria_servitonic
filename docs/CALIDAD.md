@@ -51,6 +51,10 @@ alta.
   de PR requiere que la rama pertenezca a este mismo repositorio.
 - El valor debe ser un token vigente generado en **SonarCloud → My Account →
   Security**, con permiso de análisis sobre el proyecto.
+- Mientras el token no esté disponible, el job se omite con advertencia para
+  no bloquear CI. Después de validar el primer análisis, crear la variable de
+  repositorio `SONAR_REQUIRED=true`; desde ese momento un token ausente vuelve
+  a bloquear `main` y los PR.
 
 ## Dependabot
 

@@ -110,18 +110,16 @@ jobs:
         id: sonar-config
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          EVENT_NAME: ${{ github.event_name }}
-          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-          CURRENT_REPOSITORY: ${{ github.repository }}
+          SONAR_REQUIRED: ${{ vars.SONAR_REQUIRED }}
         run: |
           if [ -n "$SONAR_TOKEN" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
-          elif [ "$EVENT_NAME" = "push" ] || [ "$HEAD_REPOSITORY" = "$CURRENT_REPOSITORY" ]; then
-            echo "::error::Falta SONAR_TOKEN; es obligatorio en main y en PRs del mismo repositorio"
+          elif [ "$SONAR_REQUIRED" = "true" ]; then
+            echo "::error::SONAR_REQUIRED=true pero falta el secreto SONAR_TOKEN"
             exit 1
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::GitHub no entrega secretos a forks; Sonar se validará obligatoriamente antes o después de integrar"
+            echo "::warning::SonarCloud omitido porque SONAR_TOKEN no está disponible. Configure el secreto y después defina SONAR_REQUIRED=true."
           fi
       - name: Analizar y esperar Quality Gate
         if: steps.sonar-config.outputs.available == 'true'
