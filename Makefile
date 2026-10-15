@@ -32,11 +32,11 @@ cov:  ## Pruebas con cobertura HTML
 	@echo "Reporte: htmlcov/index.html"
 
 lint:  ## Lint con ruff
-	ruff check backend tests
+	ruff check backend tests scripts
 
 fmt:  ## Formatea el codigo
-	ruff format backend tests
-	ruff check --fix backend tests
+	ruff format backend tests scripts
+	ruff check --fix backend tests scripts
 
 typecheck:  ## Verificacion de tipos
 	mypy backend
@@ -48,7 +48,7 @@ security:  ## Auditoria de seguridad
 security-live:  ## Pruebas basicas contra BASE_URL desplegada
 	$(PY) scripts/security_smoke.py --base-url "$(BASE_URL)" --allowed-origin "$(ALLOWED_ORIGIN)"
 
-ci: lint test  ## Equivalente local del pipeline CI
+ci: lint typecheck test security  ## Puerta local equivalente al pipeline CI (sin Docker/Sonar)
 
 docker-build:  ## Construye la imagen
 	docker compose build
