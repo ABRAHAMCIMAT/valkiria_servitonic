@@ -110,15 +110,18 @@ jobs:
         id: sonar-config
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          CURRENT_REPOSITORY: ${{ github.repository }}
         run: |
           if [ -n "$SONAR_TOKEN" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            echo "::error::Falta SONAR_TOKEN; el análisis es obligatorio en main"
+          elif [ "$EVENT_NAME" = "push" ] || [ "$HEAD_REPOSITORY" = "$CURRENT_REPOSITORY" ]; then
+            echo "::error::Falta SONAR_TOKEN; es obligatorio en main y en PRs del mismo repositorio"
             exit 1
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::SONAR_TOKEN no está disponible para este PR; se validará obligatoriamente al fusionar en main"
+            echo "::warning::GitHub no entrega secretos a forks; Sonar se validará obligatoriamente antes o después de integrar"
           fi
       - name: Analizar y esperar Quality Gate
         if: steps.sonar-config.outputs.available == 'true'

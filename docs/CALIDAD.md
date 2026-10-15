@@ -1,6 +1,6 @@
 # Calidad de software
 
-> Estado 14/10/2026: ✅ puerta local validada con 508 pruebas y 91.19 % de
+> Estado 15/10/2026: ✅ puerta local validada con 515 pruebas y 91.19 % de
 > cobertura. SonarCloud está integrado al workflow; su Quality Gate se
 > administra en la organización externa.
 
@@ -57,6 +57,21 @@ alta.
 Dependabot revisa semanalmente Python, GitHub Actions, Docker y proveedores de
 Terraform. Las actualizaciones minor/patch compatibles se agrupan para reducir
 ruido; cada PR debe pasar todas las puertas antes de fusionarse.
+
+## Branch protection recomendada
+
+Marcar como requerido únicamente `Estado CI`, que ya agrega lint, tipos,
+pruebas, seguridad, Sonar y Docker. Puede requerirse además el check externo
+de SonarCloud si la vinculación del proyecto lo publica de forma estable.
+
+No marcar como requeridos los workflows manuales:
+
+- `ServiceTonic solo lectura` (`servicetonic-test`).
+- `Verificar seguridad GCP` (`dev`/`prod`).
+- `Rotar secretos GCP`.
+
+Esos jobs usan environments con aprobación y, si se convierten en checks de
+branch protection, dejarán los PR en estado pendiente indefinidamente.
 
 ## Comandos locales
 
