@@ -1,8 +1,9 @@
 # Requerimientos de ServiceTonic para la integración con el Help Desk Multiagente
 
-> **Estado 14/10/2026:** 🔴 bloqueante. No se ha recibido la documentación API,
-> sandbox, credenciales técnicas ni catálogos. No existe todavía
-> `ServiceTonicAdapter`; I5 e I6 no deben iniciarse contra supuestos. Ver
+> **Estado 14/10/2026:** 🟡 OpenAPI v1 y servidor Valtre confirmados. Siguen
+> pendientes `idProject`, agente técnico, catálogos, campos obligatorios y
+> autorización de escritura. Ver
+> [contrato API revisado](SERVICETONIC_API.md) y
 > [estado consolidado](../ESTADO_DESARROLLO.md).
 
 > **Para:** administrador de ServiceTonic de la organización y/o contacto técnico del proveedor

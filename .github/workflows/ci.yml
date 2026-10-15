@@ -29,9 +29,9 @@ jobs:
           cache: pip
       - run: pip install ruff mypy types-requests
       - name: Ruff (lint)
-        run: ruff check backend tests
+        run: ruff check backend tests scripts
       - name: Ruff (formato)
-        run: ruff format --check backend tests
+        run: ruff format --check backend tests scripts
       - name: Mypy
         run: mypy backend
 
@@ -106,11 +106,22 @@ jobs:
         with:
           name: test-results-3.12
           path: .
-      - name: Verificar configuración de SonarCloud
+      - name: Verificar disponibilidad de SonarCloud
+        id: sonar-config
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: test -n "$SONAR_TOKEN" || (echo "Falta el secreto SONAR_TOKEN" && exit 1)
+        run: |
+          if [ -n "$SONAR_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "::error::Falta SONAR_TOKEN; el análisis es obligatorio en main"
+            exit 1
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SONAR_TOKEN no está disponible para este PR; se validará obligatoriamente al fusionar en main"
+          fi
       - name: Analizar y esperar Quality Gate
+        if: steps.sonar-config.outputs.available == 'true'
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

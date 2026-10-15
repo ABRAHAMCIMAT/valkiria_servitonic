@@ -5,6 +5,7 @@ documentado en docs/llmops/04_EVALUACION.md contra el sistema real.
 Uso:
     python3 scripts/run_evals.py
 """
+
 from __future__ import annotations
 
 import os
@@ -23,16 +24,31 @@ from backend.core.llm import LLM, LLMConfig
 # `expected_priority` acepta varias prioridades cuando la doc las documenta
 # con "/" (p. ej. "P2/P3").
 TEST_SET = [
-    {"case": 1, "message": "No puedo entrar al CRM", "expected_intent": "incident",
-     "expected_priority": {"P2", "P3"}},
-    {"case": 2, "message": "¿Cómo restablezco mi contraseña?", "expected_intent": "knowledge",
-     "expected_priority": {"P4"}},
-    {"case": 3, "message": "Necesito una laptop nueva", "expected_intent": "approval",
-     "expected_priority": {"P4"}},
-    {"case": 4, "message": "¿Cómo va mi ticket?", "expected_intent": "status",
-     "expected_priority": {"P4"}},
-    {"case": 5, "message": "Quiero una licencia de Office", "expected_intent": "service_request",
-     "expected_priority": {"P4"}},
+    {
+        "case": 1,
+        "message": "No puedo entrar al CRM",
+        "expected_intent": "incident",
+        "expected_priority": {"P2", "P3"},
+    },
+    {
+        "case": 2,
+        "message": "¿Cómo restablezco mi contraseña?",
+        "expected_intent": "knowledge",
+        "expected_priority": {"P4"},
+    },
+    {
+        "case": 3,
+        "message": "Necesito una laptop nueva",
+        "expected_intent": "approval",
+        "expected_priority": {"P4"},
+    },
+    {"case": 4, "message": "¿Cómo va mi ticket?", "expected_intent": "status", "expected_priority": {"P4"}},
+    {
+        "case": 5,
+        "message": "Quiero una licencia de Office",
+        "expected_intent": "service_request",
+        "expected_priority": {"P4"},
+    },
 ]
 
 
@@ -50,9 +66,11 @@ def main() -> int:
         passed = intent_ok and priority_ok
 
         status = "✅ PASS" if passed else "❌ FAIL"
-        print(f"{status}  Caso {case['case']}: \"{case['message']}\"")
-        print(f"        intent={result.intent.value!r} (esperado {case['expected_intent']!r}) "
-              f"· priority={result.priority.value!r} (esperado uno de {sorted(case['expected_priority'])})")
+        print(f'{status}  Caso {case["case"]}: "{case["message"]}"')
+        print(
+            f"        intent={result.intent.value!r} (esperado {case['expected_intent']!r}) "
+            f"· priority={result.priority.value!r} (esperado uno de {sorted(case['expected_priority'])})"
+        )
 
         if not passed:
             failures.append(case["case"])

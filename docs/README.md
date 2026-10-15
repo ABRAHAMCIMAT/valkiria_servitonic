@@ -26,7 +26,7 @@ consulta primero en [ESTADO_DESARROLLO.md](ESTADO_DESARROLLO.md).
 | Vertex AI | Código listo; evaluación real pendiente | [PLAN_FASE2_GOOGLE_CLOUD.md](PLAN_FASE2_GOOGLE_CLOUD.md) |
 | Firestore/Logging/BigQuery | Código e IaC listos; sin aplicar | [DESPLIEGUE_GCP.md](DESPLIEGUE_GCP.md) |
 | Microsoft Teams | Código listo; tenant/bot no configurados | [integraciones/TEAMS.md](integraciones/TEAMS.md) |
-| ServiceTonic | Bloqueado por API, sandbox y catálogos | [integraciones/SERVICETONIC_REQUERIMIENTOS.md](integraciones/SERVICETONIC_REQUERIMIENTOS.md) |
+| ServiceTonic | OpenAPI/servidor confirmados; faltan credenciales, `idProject` y catálogos | [integraciones/SERVICETONIC_API.md](integraciones/SERVICETONIC_API.md) |
 | Producción | No iniciada | [PLAN_FASE2_GOOGLE_CLOUD.md](PLAN_FASE2_GOOGLE_CLOUD.md) |
 
 ## Convención de estados

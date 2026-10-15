@@ -36,7 +36,7 @@ ignore = [
 "backend/llmops/errors.py" = ["S311"]   # jitter del backoff, no cripto
 
 [tool.ruff.lint.isort]
-known-first-party = ["backend"]
+known-first-party = ["backend", "scripts"]
 
 # ---------------------------------------------------------------------------
 # mypy - tipos estaticos (progresivo en Fase 1)

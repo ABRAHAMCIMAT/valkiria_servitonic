@@ -1,0 +1,41 @@
+name: Probar contrato ServiceTonic
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-contract:
+    name: ServiceTonic solo lectura
+    runs-on: ubuntu-latest
+    environment: servicetonic-test
+    env:
+      SERVICETONIC_BASE_URL: ${{ vars.SERVICETONIC_BASE_URL }}
+      SERVICETONIC_PROJECT_ID: ${{ vars.SERVICETONIC_PROJECT_ID }}
+      SERVICETONIC_TEST_TICKET_ID: ${{ vars.SERVICETONIC_TEST_TICKET_ID }}
+      SERVICETONIC_AUTH_PREFIX: ${{ vars.SERVICETONIC_AUTH_PREFIX }}
+      SERVICETONIC_USERNAME: ${{ secrets.SERVICETONIC_USERNAME }}
+      SERVICETONIC_PASSWORD: ${{ secrets.SERVICETONIC_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install httpx
+
+      - name: Ejecutar prueba contractual sin imprimir registros
+        run: |
+          mkdir -p evidence
+          python scripts/probe_servicetonic.py | tee evidence/servicetonic-read-only.txt
+
+      - name: Conservar evidencia no sensible
+        uses: actions/upload-artifact@v4
+        with:
+          name: servicetonic-read-only-${{ github.run_id }}
+          path: evidence/
+          retention-days: 90
