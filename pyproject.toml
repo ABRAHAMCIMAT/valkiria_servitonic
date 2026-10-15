@@ -1,7 +1,7 @@
 [project]
-name = "servicenow-multiagent"
+name = "valkiria-servicetonic"
 version = "2.2.0"
-description = "Sistema multiagente conversacional para ServiceNow (ITSM)"
+description = "Sistema multiagente conversacional para ServiceTonic sobre Google Cloud"
 requires-python = ">=3.11"
 
 # ---------------------------------------------------------------------------
@@ -10,14 +10,13 @@ requires-python = ">=3.11"
 [tool.ruff]
 line-length = 110
 target-version = "py311"
-src = ["backend", "tests"]
+src = ["backend", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "C4", "UP", "SIM", "S"]
 ignore = [
     "E501",   # longitud: la maneja line-length
     "S101",   # assert permitido en tests
-    "S104",   # bind 0.0.0.0 intencional en contenedor
     "S105",   # "clave" en tests no es un secreto real
     "S106",   # passwords de prueba
     "S108",   # rutas /tmp en tests

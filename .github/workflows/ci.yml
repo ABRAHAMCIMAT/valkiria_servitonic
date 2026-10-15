@@ -65,6 +65,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.python-version }}
+          retention-days: 7
           path: |
             junit.xml
             coverage.xml
@@ -93,6 +94,7 @@ jobs:
   sonar:
     name: SonarCloud Quality Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [test]
     permissions:
       contents: read
@@ -126,6 +128,16 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Resumen SonarCloud
+        if: always()
+        run: |
+          if [ "${{ steps.sonar-config.outputs.available }}" = "true" ]; then
+            echo "### SonarCloud ejecutado" >> "$GITHUB_STEP_SUMMARY"
+            echo "El Quality Gate fue consultado por el scanner." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### SonarCloud omitido" >> "$GITHUB_STEP_SUMMARY"
+            echo "Configure SONAR_TOKEN y SONAR_REQUIRED=true para hacerlo obligatorio." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # ---------------------------------------------------------------------------
   # 5) Docker: build + prueba de humo
@@ -143,18 +155,18 @@ jobs:
           context: .
           push: false
           load: true
-          tags: servicenow-multiagent:ci
+          tags: valkiria-servicetonic:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Verificar tamano de imagen (< 300 MB)
         run: |
-          SIZE=$(docker image inspect servicenow-multiagent:ci --format='{{.Size}}')
+          SIZE=$(docker image inspect valkiria-servicetonic:ci --format='{{.Size}}')
           MB=$((SIZE / 1024 / 1024))
           echo "Tamano: ${MB} MB"
           test "$MB" -lt 300 || (echo "Imagen demasiado grande" && exit 1)
       - name: Verificar usuario no-root
         run: |
-          USER_NAME=$(docker image inspect servicenow-multiagent:ci --format='{{.Config.User}}')
+          USER_NAME=$(docker image inspect valkiria-servicetonic:ci --format='{{.Config.User}}')
           test "$USER_NAME" = "lindy" || (echo "La imagen corre como root" && exit 1)
       - name: Prueba de humo del contenedor
         run: |
@@ -163,7 +175,7 @@ jobs:
             -e API_KEYS=ci_key:admin \
             -e CORS_ORIGINS=http://localhost:8000 \
             -e LLM_PROVIDER=mock \
-            -p 8000:8000 servicenow-multiagent:ci
+            -p 8000:8000 valkiria-servicetonic:ci
           for i in $(seq 1 30); do
             if curl -sf http://localhost:8000/api/health > /dev/null; then
               echo "Health OK"; break

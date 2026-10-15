@@ -466,7 +466,8 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.getenv("PORT", "8000"))
-    print(f"ServiceNow Multi-Agent API en http://localhost:{port}")
+    display_host = "localhost" if config.SERVER_HOST in ("127.0.0.1", "::1") else config.SERVER_HOST
+    print(f"Valkiria ServiceTonic API en http://{display_host}:{port}")
     print(f"  LLM: {llm.config.provider} ({llm.config.model})")
     print(f"  ServiceNow: {'LIVE' if snow.live else 'DEMO'}")
     print(f"  Notificaciones: {notifier.channel} ({getattr(notifier, 'mode', '')})")
@@ -475,7 +476,4 @@ if __name__ == "__main__":
     print(f"  CORS: {config.CORS_ORIGINS}")
     print(f"  Dashboard: http://localhost:{port}/dashboard")
     print(f"  Endpoint OpenAI-compatible (para Jan): http://localhost:{port}/v1/chat/completions")
-    # El contenedor debe escuchar en todas sus interfaces para que Cloud Run
-    # pueda enrutar tráfico. La exposición externa sigue controlada por IAM,
-    # CORS, autenticación de aplicación y la configuración de ingress.
-    uvicorn.run(app, host="0.0.0.0", port=port)  # nosec B104
+    uvicorn.run(app, host=config.SERVER_HOST, port=port)

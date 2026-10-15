@@ -2,6 +2,7 @@ locals {
   plain_env = merge(
     {
       APP_ENV            = var.app_env
+      HOST               = "0.0.0.0"
       CORS_ORIGINS       = var.cors_origins
       LLM_PROVIDER       = var.llm_provider
       GCP_PROJECT        = var.project_id

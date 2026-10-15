@@ -19,6 +19,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     APP_ENV=production \
     DATA_DIR=/app/data \
+    HOST=0.0.0.0 \
     PORT=8000
 
 # Usuario sin privilegios (defensa en profundidad)

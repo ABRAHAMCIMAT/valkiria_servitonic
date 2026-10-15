@@ -36,6 +36,11 @@ Cada cambio en `main` o pull request debe superar:
 | Maintainability Rating | A |
 | Security Hotspots Reviewed | 100 % |
 
+El repositorio analiza `backend/` y `scripts/`. Los scripts CLI se analizan
+para bugs, vulnerabilidades y mantenibilidad, pero se excluyen de cobertura
+porque no forman parte del runtime importable. Las pruebas se excluyen de la
+detección de duplicación.
+
 La cobertura global también está protegida localmente por `coverage.py`; Sonar
 evita que código nuevo reduzca la calidad aunque la media histórica permanezca
 alta.
@@ -55,6 +60,16 @@ alta.
   no bloquear CI. Después de validar el primer análisis, crear la variable de
   repositorio `SONAR_REQUIRED=true`; desde ese momento un token ausente vuelve
   a bloquear `main` y los PR.
+
+Para considerar Sonar completamente configurado deben existir simultáneamente:
+
+```text
+Repository secret:   SONAR_TOKEN=<token vigente>
+Repository variable: SONAR_REQUIRED=true
+```
+
+Además, el proyecto de SonarCloud debe estar vinculado al repositorio privado
+y tener **Automatic Analysis desactivado**.
 
 ## Dependabot
 

@@ -13,6 +13,7 @@ services:
     environment:
       # --- Fase 0: seguridad (obligatorias en production) ---
       APP_ENV: ${APP_ENV:-production}
+      HOST: 0.0.0.0
       API_KEYS: "${API_KEYS:?API_KEYS es obligatoria, formato clave:rol}"
       CORS_ORIGINS: "${CORS_ORIGINS:?CORS_ORIGINS es obligatoria en production}"
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-60}

@@ -113,6 +113,13 @@ CORS_ORIGINS="https://soporte.corp.com,https://portal.corp.com"
 | `AUDIT_LOG` | `backend/data/audit.jsonl` | Ruta del audit trail |
 | `LOG_USER_CONTENT` | `false` | Si `true`, registra el contenido del usuario redactado (solo depuración) |
 
+## Interfaz de red
+
+La ejecución directa escucha por defecto en `127.0.0.1`, por lo que no expone
+la API en todas las interfaces. Docker y Cloud Run declaran `HOST` de forma
+explícita dentro del contenedor; la exposición externa sigue controlada por
+ingress, IAM, CORS, RBAC y, en producción, Cloud Armor.
+
 ## Verificación rápida
 
 ```bash
