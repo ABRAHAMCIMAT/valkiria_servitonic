@@ -1,7 +1,7 @@
 # 📚 Documentación LLMOps — Sistema Multiagente Conversacional
 
-> Actualizada el 14 de octubre de 2026. Métricas vigentes: 508 pruebas,
-> 91.19 % de cobertura, CI con Ruff/Mypy/Bandit/`pip-audit`/SonarCloud. La
+> Actualizada el 15 de octubre de 2026. Métricas vigentes: 527 pruebas,
+> 91.16 % de cobertura, CI con Ruff/Mypy/Bandit/`pip-audit`/SonarCloud. La
 > operación cloud continúa pendiente. Ver
 > [estado consolidado](../ESTADO_DESARROLLO.md).
 

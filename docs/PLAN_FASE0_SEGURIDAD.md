@@ -22,8 +22,8 @@ Microsoft Teams y Google Cloud.
 
 ## Evidencia local
 
-- 508 pruebas aprobadas.
-- 91.19 % de cobertura.
+- 527 pruebas aprobadas.
+- 91.16 % de cobertura.
 - 12/12 verificaciones del smoke test.
 - Bandit sin hallazgos medios/altos.
 - `pip-audit` sin vulnerabilidades conocidas.

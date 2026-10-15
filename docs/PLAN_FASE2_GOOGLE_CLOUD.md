@@ -1,5 +1,9 @@
 # Plan incremental — ServiceTonic, Microsoft Teams y Google Cloud
 
+> **Diferido:** Google Cloud no forma parte del PoC vigente. El alcance actual
+> termina al demostrar localmente tickets ServiceTonic y aprobaciones Teams.
+> Ver [POC_LOCAL.md](POC_LOCAL.md).
+
 > Estado actualizado al 14 de octubre de 2026. ServiceTonic es el sistema de
 > ticketing objetivo; Teams es el canal de aprobación; Google Cloud es la
 > plataforma completa de operación.

@@ -2,19 +2,21 @@
 
 ## Épica
 
+> Alcance PoC vigente: despliegue local, tickets ServiceTonic y aprobaciones
+> Microsoft Teams. Los criterios Google Cloud quedan diferidos.
+
 **Como** usuario y equipo de soporte, **quiero** resolver incidencias,
 solicitudes y consultas mediante una conversación integrada con ServiceTonic,
 Microsoft Teams y Google Cloud, **para** reducir tiempos de resolución y
 mantener trazabilidad, seguridad y control operacional.
 
-## Criterios de aceptación de la épica
+## Criterios de aceptación del PoC
 
 - ServiceTonic es el sistema único de registro de tickets.
-- Gemini en Vertex AI realiza razonamiento con identidad administrada.
 - Teams gestiona notificaciones y aprobaciones interactivas.
-- Cloud Run ejecuta la aplicación y Firestore mantiene estado durable.
-- Cloud Logging, BigQuery y Monitoring permiten operación y auditoría.
-- Secret Manager contiene todos los secretos.
+- Docker local ejecuta la aplicación de forma reproducible.
+- El LLM mock permite una demostración determinista sin nube.
+- Los secretos permanecen únicamente en `.env.poc`, fuera de Git.
 - CI exige pruebas, cobertura >90 %, análisis estático y seguridad.
 
 ## Historias
@@ -54,8 +56,6 @@ mantener trazabilidad, seguridad y control operacional.
 
 1. Ticket real creado, consultado y actualizado en ServiceTonic.
 2. Aprobación real completada desde Teams.
-3. Conversación durable entre instancias de Cloud Run.
-4. Gemini iguala o supera la línea base de calidad.
-5. Logs/canarios confirman ausencia de PII y secretos.
-6. IAM sin llaves JSON y con mínimo privilegio.
-7. Piloto aprobado, observabilidad activa y rollback probado.
+3. Conversación y aprobación se mantienen durante la sesión local.
+4. Logs locales no contienen PII o secretos crudos.
+5. Evidencia del flujo completo aprobada por el equipo del PoC.

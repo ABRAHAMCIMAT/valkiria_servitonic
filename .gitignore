@@ -9,6 +9,7 @@ backend/data/
 .env
 .env.*
 !.env.example
+!.env.poc.example
 secrets/
 
 # Python

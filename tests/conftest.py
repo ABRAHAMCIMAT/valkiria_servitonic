@@ -45,7 +45,7 @@ os.environ["RATE_LIMIT_MAX"] = "10000"  # no interferir con las pruebas de API
 os.environ["RATE_LIMIT_WINDOW"] = "60"
 os.environ["LLM_PROVIDER"] = "mock"
 os.environ["LOG_USER_CONTENT"] = "false"
-os.environ["NOTIFY_CHANNEL"] = "slack"
+os.environ["NOTIFY_CHANNEL"] = "teams"
 (_TMP_ROOT / "data").mkdir(parents=True, exist_ok=True)
 
 
@@ -66,6 +66,7 @@ def _isolated_env(monkeypatch, tmp_path):
     monkeypatch.setenv("RATE_LIMIT_MAX", "10000")
     monkeypatch.setenv("LLM_PROVIDER", "mock")
     monkeypatch.setenv("LOG_USER_CONTENT", "false")
+    monkeypatch.setenv("NOTIFY_CHANNEL", "teams")
     monkeypatch.delenv("SNOW_INSTANCE", raising=False)
     monkeypatch.delenv("SNOW_USER", raising=False)
     monkeypatch.delenv("SNOW_PASSWORD", raising=False)

@@ -1,6 +1,6 @@
 # Fase 4 — Evaluación
 
-> Revisión 14/10/2026: 508 pruebas y 91.19 % de cobertura. Falta ejecutar la
+> Revisión 15/10/2026: 527 pruebas y 91.16 % de cobertura. Falta ejecutar la
 > comparación de calidad/costo con Vertex AI real y evaluar el RAG productivo.
 
 ## Marco de evaluación (`backend/llmops/evals.py`)

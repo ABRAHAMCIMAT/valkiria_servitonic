@@ -7,8 +7,8 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Pruebas | **508** |
-| Cobertura | **91.19 %** (umbral estricto >90 %) |
+| Pruebas | **527** |
+| Cobertura | **91.16 %** (umbral estricto >90 %) |
 | Python CI | 3.11 y 3.12 |
 | Calidad | Ruff + Mypy + SonarCloud |
 | Seguridad | Bandit + `pip-audit` |

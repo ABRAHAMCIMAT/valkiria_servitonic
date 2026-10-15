@@ -3,9 +3,8 @@ Puertos (interfaces) de los sistemas externos.
 
 Mismo enfoque que `core/storage.py`: contratos con tipado estructural
 (`typing.Protocol`), sin herencia. Los agentes dependen de estas interfaces y
-no de una clase concreta, de modo que el sistema de tickets (ServiceNow hoy,
-ServiceTonic después — ver docs/PLAN_FASE2_GOOGLE_CLOUD.md, I1/I5) o el canal
-de notificaciones (Slack, Teams) se cambian con una variable de entorno, sin
+no de una clase concreta, de modo que ServiceTonic y Microsoft Teams se
+seleccionan por configuración, sin
 tocar los agentes.
 """
 
@@ -43,7 +42,7 @@ class TicketingPort(Protocol):
 
 @runtime_checkable
 class NotifierPort(Protocol):
-    """Canal de notificaciones (aprobaciones y actualizaciones de ticket)."""
+    """Canal Teams para aprobaciones y actualizaciones de ticket."""
 
     channel: str
     live: bool

@@ -6,8 +6,8 @@ trabajan con las interfaces (adapters/ports.py, core/storage.py,
 core/approvals.py). Cambiar de proveedor = cambiar una variable y desplegar
 una revisión nueva, sin tocar código:
 
-  TICKETING_PROVIDER = servicenow (por defecto) | servicetonic (pendiente, I5)
-  NOTIFY_CHANNEL     = teams (por defecto) | slack | whatsapp
+  TICKETING_PROVIDER = servicenow (compatibilidad) | servicetonic (PoC)
+  NOTIFY_CHANNEL     = teams (único canal del PoC)
   STORAGE_BACKEND    = file (por defecto) | firestore
 """
 
@@ -19,7 +19,6 @@ from .. import config
 from ..core.approvals import ApprovalStorage, InMemoryApprovalStore
 from ..core.state import ConversationStore
 from ..core.storage import ConversationStorage
-from .notifications import NotificationAdapter
 from .ports import NotifierPort, TicketingPort
 from .servicenow import ServiceNowAdapter
 
@@ -29,19 +28,19 @@ def build_ticketing() -> TicketingPort:
     if provider == "servicenow":
         return ServiceNowAdapter()
     if provider == "servicetonic":
-        raise RuntimeError(
-            "TICKETING_PROVIDER='servicetonic' aún no está disponible: depende de los "
-            "requerimientos de docs/integraciones/SERVICETONIC_REQUERIMIENTOS.md (plan, I5)."
-        )
+        from .servicetonic import ServiceTonicAdapter
+
+        return ServiceTonicAdapter()
     raise RuntimeError(f"TICKETING_PROVIDER desconocido: {provider!r}")
 
 
 def build_notifier() -> NotifierPort:
-    if os.getenv("NOTIFY_CHANNEL", "teams").lower() == "teams":
+    channel = os.getenv("NOTIFY_CHANNEL", "teams").lower()
+    if channel == "teams":
         from .teams import TeamsNotifier
 
         return TeamsNotifier()
-    return NotificationAdapter()
+    raise RuntimeError(f"NOTIFY_CHANNEL={channel!r} no está soportado por el PoC; use 'teams'.")
 
 
 def _storage_backend() -> str:

@@ -1,5 +1,9 @@
 # Despliegue del stack Google Cloud
 
+> **Fuera del alcance del PoC local.** Este documento se conserva como roadmap
+> de industrialización posterior. El PoC vigente se ejecuta con Docker y se
+> documenta en [POC_LOCAL.md](POC_LOCAL.md).
+
 > Arquitectura objetivo: ServiceTonic + Microsoft Teams + Google Cloud.
 > Estado: IaC y workflows listos; proyectos dev/prod pendientes de creación.
 

@@ -3,7 +3,8 @@ PY := python3
 PIP := $(PY) -m pip
 
 .PHONY: help install dev test test-unit test-int test-e2e cov lint fmt typecheck \
-        security security-live ci docker-build up down logs clean gcp-init gcp-plan gcp-apply teams-app
+        security security-live ci docker-build up down logs clean poc-up poc-down poc-logs \
+        gcp-init gcp-plan gcp-apply teams-app
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -65,6 +66,15 @@ local-up:  ## Despliega en local con un solo comando (venv + deps + server, modo
 
 local-down:  ## Detiene el servidor levantado por local-up
 	./scripts/deploy_local.sh --stop
+
+poc-up:  ## Levanta PoC local ServiceTonic + Teams usando .env.poc
+	./scripts/run_poc_local.sh up
+
+poc-down:  ## Detiene PoC local
+	./scripts/run_poc_local.sh down
+
+poc-logs:  ## Sigue logs del PoC local
+	./scripts/run_poc_local.sh logs
 
 # --- Google Cloud (Fase 2). ENV=dev|prod; ver docs/DESPLIEGUE_GCP.md ---
 ENV ?= dev
