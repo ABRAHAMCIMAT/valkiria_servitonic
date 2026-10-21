@@ -44,7 +44,7 @@ def _token_from_response(response: httpx.Response) -> str:
     try:
         payload = response.json()
     except ValueError:
-        return text.strip('"')
+        return str(text.strip('"'))
     if isinstance(payload, str):
         return payload.strip()
     if isinstance(payload, dict):
