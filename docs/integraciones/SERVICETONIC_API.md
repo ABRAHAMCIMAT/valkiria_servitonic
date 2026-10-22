@@ -1,5 +1,9 @@
 # Contrato API ServiceTonic — servidor Valtre
 
+> **Hallazgos contra la instancia real (21–23 oct 2026):** autenticación, nombres de campos,
+> cuota de la licencia y bloqueo de la escritura en
+> [SERVICETONIC_HALLAZGOS.md](SERVICETONIC_HALLAZGOS.md).
+
 > Revisión técnica: 14 de octubre de 2026.
 
 ## Conclusión
