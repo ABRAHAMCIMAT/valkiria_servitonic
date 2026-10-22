@@ -213,3 +213,115 @@ def test_create_accepts_object_response_and_invalid_ticket_id_is_rejected(servic
     invalid = Ticket(number="not-numeric")
     with pytest.raises(ProviderError, match="ID interno"):
         adapter.update_incident(invalid, {"state": "Resolved"})
+
+
+# -- Comportamiento comprobado contra Valtre (docs/integraciones/SERVICETONIC_HALLAZGOS.md) --
+
+
+def _routes(responses):
+    """Handler que autentica y responde según (método, sufijo de ruta); registra las peticiones."""
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request):
+        seen.append(request)
+        if request.url.path.endswith("/auth"):
+            return httpx.Response(200, text="token")
+        for (method, suffix), response in responses.items():
+            if request.method == method and request.url.path.endswith(suffix):
+                return response
+        return httpx.Response(404, text="ruta no simulada")
+
+    return handler, seen
+
+
+def test_writes_send_a_multipart_body_with_one_part(servicetonic_env):
+    handler, seen = _routes({("POST", "/tickets"): httpx.Response(200, text="5")})
+    make_adapter(handler).create_incident(Ticket(short_description="x", caller="user@example.com"))
+    write = seen[-1]
+    assert write.headers["Content-Type"].startswith("multipart/form-data; boundary=")
+    assert b'name="files"' in write.content  # sin partes, Valtre responde 400 Missing start boundary
+    assert "rsTicket" in write.url.params
+
+
+def test_value_map_translates_state_and_priority_both_ways(servicetonic_env, monkeypatch):
+    monkeypatch.setenv(
+        "SERVICETONIC_VALUE_MAP",
+        json.dumps({"priority": {"P2": "Alta"}, "state": {"New": "Nuevo", "In Progress": "Abierta"}}),
+    )
+    handler, seen = _routes(
+        {
+            ("POST", "/tickets"): httpx.Response(200, text="5"),
+            ("POST", "/tickets/list"): httpx.Response(
+                200,
+                json=[
+                    {
+                        "idTicket": 5,
+                        "fieldList": [
+                            {"fieldName": "status", "value": "Abierta"},
+                            {"fieldName": "priority", "value": "Alta"},
+                        ],
+                    }
+                ],
+            ),
+        }
+    )
+    adapter = make_adapter(handler)
+    adapter.create_incident(Ticket(short_description="x", priority=Priority.P2, state="New"))
+    sent = {f["fieldName"]: f["value"] for f in json.loads(seen[-1].url.params["rsTicket"])["fieldList"]}
+    assert sent["priority"] == "Alta" and sent["status"] == "Nuevo"
+
+    [ticket] = adapter.list_tickets("user@example.com", limit=1)
+    assert ticket.priority == Priority.P2 and ticket.state == "In Progress"
+
+
+def test_invalid_value_map_is_rejected(servicetonic_env, monkeypatch):
+    from backend.adapters.servicetonic import ServiceTonicAdapter
+
+    monkeypatch.setenv("SERVICETONIC_VALUE_MAP", '{"priority": "Alta"}')
+    with pytest.raises(RuntimeError, match="VALUE_MAP"):
+        ServiceTonicAdapter()
+
+
+def test_notes_become_actions(servicetonic_env):
+    handler, seen = _routes(
+        {
+            ("PUT", "/tickets/9"): httpx.Response(200, text="9"),
+            ("POST", "/tickets/9/actions"): httpx.Response(200, text="1"),
+        }
+    )
+    ticket = Ticket(number="9", metadata={"servicetonic_id": 9})
+    make_adapter(handler).update_incident(
+        ticket, {"state": "Resolved", "work_notes": "Resumen L2", "resolution_notes": "Listo"}
+    )
+    actions = [json.loads(r.url.params["rsAction"]) for r in seen if r.url.path.endswith("/actions")]
+    assert actions == [
+        {"description": "Resumen L2", "isPublic": False, "isSolution": False},
+        {"description": "Listo", "isPublic": True, "isSolution": True},
+    ]
+    assert ticket.work_notes == ["Resumen L2"]  # se acumula, no se sustituye la lista
+
+
+def test_unknown_ticket_err012_returns_none(servicetonic_env):
+    handler, _ = _routes({("GET", "/tickets/404"): httpx.Response(400, text="ERR012-Expected ticket")})
+    assert make_adapter(handler).get_incident("404") is None
+
+
+def test_other_client_errors_keep_the_server_message(servicetonic_env):
+    from backend.llmops.errors import ProviderError
+
+    handler, _ = _routes({("POST", "/tickets"): httpx.Response(400, text="Team does not exist")})
+    with pytest.raises(ProviderError, match="Team does not exist"):
+        make_adapter(handler).create_incident(Ticket(short_description="x"))
+
+
+def test_long_texts_are_truncated_to_fit_the_url(servicetonic_env):
+    from urllib.parse import quote
+
+    from backend.adapters.servicetonic import MAX_TEXT_URL_CHARS, fit_for_url
+
+    assert fit_for_url("No puedo entrar al CRM") == "No puedo entrar al CRM"
+    handler, seen = _routes({("POST", "/tickets"): httpx.Response(200, text="5")})
+    make_adapter(handler).create_incident(Ticket(short_description="x", description="ñ" * 50_000))
+    sent = {f["fieldName"]: f["value"] for f in json.loads(seen[-1].url.params["rsTicket"])["fieldList"]}
+    assert len(quote(sent["description"], safe="")) <= MAX_TEXT_URL_CHARS
+    assert sent["description"].endswith("[…recortado]")

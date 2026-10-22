@@ -1,0 +1,1471 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "ServiceTonic REST API Documentation",
+    "description": "To invoke the following operations, previously you must be authenticated in the application, you must request the generation of a connection token.\n",
+    "contact": {
+      "name": "ServiceTonic",
+      "email": "support@servicetonic.com"
+    },
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "/ServiceTonic"
+    }
+  ],
+  "security": [
+    {
+      "Authorization": []
+    }
+  ],
+  "paths": {
+    "/strest/v1/auth": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Generate authentication token",
+        "description": "Authentication is based on tokens. These tokens are generated randomly by the platform at the time of requesting access to the service.\nThe obtained tokens must be sent together with the requests as an Authorization header that will allow the system to validate, authenticate and identify the origin of the request.",
+        "operationId": "authenticateUser",
+        "requestBody": {
+          "description": "idProject: Remote service identifier.\nusername: Agent's username to authenticate in the remote ServiceTonic.\npassword: Agent's password encrypted in SHA-1 and Base64.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RSCredential"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Encrypted Authorization Token."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/cis": {
+      "post": {
+        "tags": [
+          "Configuration Items Administration"
+        ],
+        "summary": "Create a new configuration item (ci)",
+        "description": "This operation allows you to create a new ci in a specific service of a Remote ServiceTonic.\nTo do this, it takes as input a MULTIPART_FORM_DATA that can contain ci attachments and a list of contacts related to the ci, as well as a JSON with the ci information to be created.",
+        "operationId": "createCi",
+        "parameters": [
+          {
+            "name": "rsConfigurationItem",
+            "in": "query",
+            "description": "Ci information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "object",
+                    "description": "Ci files to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created ci id."
+          },
+          "400": {
+            "description": "No ci data, \nNot related Cmdb, \nNo ci title found, \nNo ci status found, \nCi status does not exist, \nNo ci type found, \nCi type does not exist, \nNo ci serial number found, \nCi serial number already exists, \nNot valid agent, \nAgent does not have create permission."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/cis/{idCiCmdb}": {
+      "put": {
+        "tags": [
+          "Configuration Items Administration"
+        ],
+        "summary": "Update an existing configuration item (ci)",
+        "description": "This operation allows modifying a ci of a certain service of a Remote ServiceTonic.\nFor this, it takes as input a MULTIPART_FORM_DATA that can contain ci attachments and a list of contacts related to the ci, as well as a JSON with the ci information to be modified.",
+        "operationId": "updateCi",
+        "parameters": [
+          {
+            "name": "rsConfigurationItem",
+            "in": "query",
+            "description": "Ci information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "idCiCmdb",
+            "in": "path",
+            "description": "Internal numeric identifier of a ci from the service.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "object",
+                    "description": "Ci files to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated ci id."
+          },
+          "400": {
+            "description": "No ci data, \nNot related Cmdb, \nCi does not exist, \nNot valid agent, \nAgent does not have modify permission."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/cis/sn": {
+      "put": {
+        "tags": [
+          "Configuration Items Administration"
+        ],
+        "summary": "Update an existing configuration item (ci)",
+        "description": "This operation allows modifying a ci of a certain service of a Remote ServiceTonic.\nFor this, it takes as input a MULTIPART_FORM_DATA that can contain ci attachments and a list of contacts related to the ci, as well as a JSON with the ci information to be modified.",
+        "operationId": "updateCiWithSerial",
+        "parameters": [
+          {
+            "name": "rsConfigurationItem",
+            "in": "query",
+            "description": "Ci information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "serialNumber",
+            "in": "query",
+            "description": "Serial number of a ci from the service.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "object",
+                    "description": "Ci files to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated ci serial."
+          },
+          "400": {
+            "description": "No ci data, \nNot related Cmdb, \nCi does not exist, \nNot valid agent, \nAgent does not have modify permission."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/contacts": {
+      "post": {
+        "tags": [
+          "Contact Administration"
+        ],
+        "summary": "Create a new contact",
+        "description": "This operation allows creating a new contact in the internal list of the contact template associated with the service reported in a remote ServiceTonic.\nTo do this, it takes as input a MULTIPART_FORM_DATA that can contain an image with the contact's photo as well as a JSON with the contact information to create.",
+        "operationId": "createContact",
+        "parameters": [
+          {
+            "name": "rsContact",
+            "in": "query",
+            "description": "Contact information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "object",
+                    "description": "Contact photo to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact created."
+          },
+          "400": {
+            "description": "No contact data, \nContact already exists."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/contacts/{identContact}": {
+      "put": {
+        "tags": [
+          "Contact Administration"
+        ],
+        "summary": "Update an existing contact",
+        "description": "This operation allows you to modify an existing contact in the internal list of the contact template associated with the reported service in a remote ServiceTonic .\nTo do this, it takes as input a MULTIPART_FORM_DATA that can contain an image with the contact's photo as well as a JSON with the contact information to be modified.",
+        "operationId": "updateContact",
+        "parameters": [
+          {
+            "name": "rsContact",
+            "in": "query",
+            "description": "Contact information as JSON.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "identContact",
+            "in": "path",
+            "description": "Identifier of a ServiceTonic contact/user.\nIt will be a value of the contact identifier field defined in the contact template associated with the remote service.",
+            "required": true,
+            "schema": {
+              "pattern": ".+",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "object",
+                    "description": "Contact photo to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact updated."
+          },
+          "400": {
+            "description": "No contact data, \nContact not found."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Contact Administration"
+        ],
+        "summary": "Delete an existing contact",
+        "description": "This operation allows you to delete an existing contact in the internal list of the contact template associated with the reported service in a remote ServiceTonic.",
+        "operationId": "deleteContact",
+        "parameters": [
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "identContact",
+            "in": "path",
+            "description": "Identifier of a ServiceTonic contact/user.\nIt will be a value of the contact identifier field defined in the contact template associated with the remote service.",
+            "required": true,
+            "schema": {
+              "pattern": ".+",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact deleted."
+          },
+          "400": {
+            "description": "No contact data, \nContact not found."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/contacts/list": {
+      "post": {
+        "tags": [
+          "Contact Administration"
+        ],
+        "summary": "List Contacts.",
+        "description": "This operation allows to query the internal contact list of a project.",
+        "operationId": "getContacts",
+        "parameters": [
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RSQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Contact List."
+          },
+          "204": {
+            "description": "No content."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/tickets/{idIncident}/actions": {
+      "post": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "Add action to an existing ticket",
+        "description": "This operation allows adding a new action to an existing ticket in a remote ServiceTonic.\nTo do this, it takes as input a MULTIPART_FORM_DATA that can contain a list of attachments to the action as well as a JSON with the information of the action to be created.",
+        "operationId": "addAction",
+        "parameters": [
+          {
+            "name": "rsAction",
+            "in": "query",
+            "description": "Action information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "idIncident",
+            "in": "path",
+            "description": "Internal numeric identifier of a incident from the service.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "object",
+                    "description": "Action files to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created action id."
+          },
+          "400": {
+            "description": "No action data, \nTicket does not exist."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/tickets/{idIncident}/comments": {
+      "post": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "Add action to an existing ticket",
+        "description": "This operation allows you to add a new comment to an existing ticket in a remote ServiceTonic.\nTo do this, it takes as input a MULTIPART_FORM_DATA that can contain a list of files attached to the comment as well as a JSON with the information of the comment to be created.",
+        "operationId": "addComment",
+        "parameters": [
+          {
+            "name": "rsComment",
+            "in": "query",
+            "description": "Comment information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "idIncident",
+            "in": "path",
+            "description": "Internal numeric identifier of a incident from the service.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "object",
+                    "description": "Comment files to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Comment created."
+          },
+          "400": {
+            "description": "No comment data, \nTicket does not exist."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/tickets": {
+      "post": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "Create a new ticket",
+        "description": "This operation allows you to create a new ticket in a specific service of a Remote ServiceTonic.\nTo do this, it takes as input a MULTIPART_FORM_DATA that can contain ticket attachments as well as a JSON with the ticket information to be created.",
+        "operationId": "createTicket",
+        "parameters": [
+          {
+            "name": "rsTicket",
+            "in": "query",
+            "description": "Ticket information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "object",
+                    "description": "Ticket files to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created ticket id."
+          },
+          "400": {
+            "description": "No ticket data, \nNo contact data, \nTeam does not exist, \nNot valid agent, \nTicket already exists."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/tickets/files/{idIncident}/{filename}/content": {
+      "get": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "Get attached file content",
+        "description": "This operation allows you to download the binary content of a ticket attached file.",
+        "operationId": "getFileContent",
+        "parameters": [
+          {
+            "name": "idIncident",
+            "in": "path",
+            "description": "Internal numeric identifier of an incident from the service.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "description": "Attached file name.",
+            "required": true,
+            "schema": {
+              "pattern": ".+",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content."
+          },
+          "400": {
+            "description": "Ticket does not exist."
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "403": {
+            "description": "Agent does not have access to the ticket."
+          },
+          "404": {
+            "description": "Attached file does not exist."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/tickets/files/public/{idIncident}/{filename}/content": {
+      "get": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "Get public attached file content",
+        "description": "This operation allows you to download the binary content of a public ticket attached file.",
+        "operationId": "getPublicFileContent",
+        "parameters": [
+          {
+            "name": "idIncident",
+            "in": "path",
+            "description": "Internal numeric identifier of an incident from the service.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "path",
+            "description": "Attached file name.",
+            "required": true,
+            "schema": {
+              "pattern": ".+",
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content."
+          },
+          "400": {
+            "description": "Ticket or project does not exist."
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "403": {
+            "description": "Agent does not have access to the ticket."
+          },
+          "404": {
+            "description": "Attached file does not exist."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/tickets/{idIncident}": {
+      "get": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "Get ticket by id",
+        "description": "This operation allows you to get a ticket by id from a specific service.",
+        "operationId": "getTicketById",
+        "parameters": [
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "idIncident",
+            "in": "path",
+            "description": "Internal numeric identifier of a incident from the service.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "getHistory",
+            "in": "query",
+            "description": "If true, includes ticket history and actions.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket found."
+          },
+          "400": {
+            "description": "Ticket or project does not exist."
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "403": {
+            "description": "Forbidden."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "Update an existing ticket",
+        "description": "This operation allows modifying a ticket of a certain service of a Remote ServiceTonic.\nFor this, it takes as input a MULTIPART_FORM_DATA that can contain ticket attachments as well as a JSON with the information of the ticket to be modified.",
+        "operationId": "updateTicket",
+        "parameters": [
+          {
+            "name": "rsTicket",
+            "in": "query",
+            "description": "Ticket information as JSON",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "idIncident",
+            "in": "path",
+            "description": "Internal numeric identifier of a incident from the service.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "object",
+                    "description": "Ticket files to upload."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated ticket id."
+          },
+          "400": {
+            "description": "No ticket data, \nNo contact data, \nTeam does not exist, \nNot valid agent, \nTicket does not exist."
+          },
+          "401": {
+            "description": "Unauthorized."
+          }
+        }
+      }
+    },
+    "/strest/v1/services/{idProject}/tickets/list": {
+      "post": {
+        "tags": [
+          "Ticket Administration"
+        ],
+        "summary": "List Tickets.",
+        "description": "This operation allows to query a ticket list of a project.",
+        "operationId": "getTickets",
+        "parameters": [
+          {
+            "name": "idProject",
+            "in": "path",
+            "description": "Internal numeric identifier of a service from a ServiceTonic installation.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RSQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tickets List."
+          },
+          "204": {
+            "description": "No content."
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "429": {
+            "description": "Too many requests."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RSConfigurationItem": {
+        "type": "object",
+        "properties": {
+          "fieldList": {
+            "type": "array",
+            "properties": {
+              "hashMap": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSField"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSField"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSField"
+            }
+          },
+          "contactList": {
+            "type": "array",
+            "properties": {
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSContact"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSContact"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSContact"
+            }
+          }
+        }
+      },
+      "RSContact": {
+        "type": "object",
+        "properties": {
+          "identContact": {
+            "type": "string"
+          },
+          "fieldList": {
+            "type": "array",
+            "properties": {
+              "hashMap": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSField"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSField"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSField"
+            }
+          },
+          "updateContact": {
+            "type": "boolean"
+          },
+          "webContacts": {
+            "type": "array",
+            "properties": {
+              "hashMap": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSWebContact"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSWebContact"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSWebContact"
+            }
+          }
+        }
+      },
+      "RSContactList": {
+        "type": "array",
+        "properties": {
+          "empty": {
+            "type": "boolean"
+          },
+          "first": {
+            "$ref": "#/components/schemas/RSContact"
+          },
+          "last": {
+            "$ref": "#/components/schemas/RSContact"
+          }
+        },
+        "items": {
+          "$ref": "#/components/schemas/RSContact"
+        }
+      },
+      "RSField": {
+        "type": "object",
+        "properties": {
+          "fieldName": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "value": {
+            "type": "object"
+          },
+          "textValue": {
+            "type": "string"
+          },
+          "orderDirection": {
+            "type": "string"
+          }
+        }
+      },
+      "RSFieldList": {
+        "type": "array",
+        "properties": {
+          "hashMap": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "empty": {
+            "type": "boolean"
+          },
+          "first": {
+            "$ref": "#/components/schemas/RSField"
+          },
+          "last": {
+            "$ref": "#/components/schemas/RSField"
+          }
+        },
+        "items": {
+          "$ref": "#/components/schemas/RSField"
+        }
+      },
+      "RSWebContact": {
+        "type": "object",
+        "properties": {
+          "idProject": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rolTitle": {
+            "type": "string"
+          }
+        }
+      },
+      "RSWebContactList": {
+        "type": "array",
+        "properties": {
+          "hashMap": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "empty": {
+            "type": "boolean"
+          },
+          "first": {
+            "$ref": "#/components/schemas/RSWebContact"
+          },
+          "last": {
+            "$ref": "#/components/schemas/RSWebContact"
+          }
+        },
+        "items": {
+          "$ref": "#/components/schemas/RSWebContact"
+        }
+      },
+      "RSTicket": {
+        "type": "object",
+        "properties": {
+          "idTicket": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "idProject": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "team": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "ownerTeam": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/RSContact"
+          },
+          "fieldList": {
+            "type": "array",
+            "properties": {
+              "hashMap": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSField"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSField"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSField"
+            }
+          },
+          "action": {
+            "$ref": "#/components/schemas/RSAction"
+          },
+          "comment": {
+            "$ref": "#/components/schemas/RSComment"
+          },
+          "cis": {
+            "type": "array",
+            "properties": {
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSEntityBean"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSEntityBean"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSEntityBean"
+            }
+          },
+          "comments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RSComment"
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RSAction"
+            }
+          }
+        }
+      },
+      "RSAction": {
+        "type": "object",
+        "properties": {
+          "actionType": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "rolTitle": {
+            "type": "string"
+          },
+          "hours": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isSolution": {
+            "type": "boolean"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attacheds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RSAttached"
+            }
+          }
+        }
+      },
+      "RSAttached": {
+        "type": "object",
+        "properties": {
+          "idAttached": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contentId": {
+            "type": "string"
+          },
+          "inline": {
+            "type": "boolean"
+          },
+          "uri": {
+            "type": "string"
+          }
+        }
+      },
+      "RSComment": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attacheds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RSAttached"
+            }
+          }
+        }
+      },
+      "RSEntityBean": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "selected": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RSEntityBeanList": {
+        "type": "array",
+        "properties": {
+          "empty": {
+            "type": "boolean"
+          },
+          "first": {
+            "$ref": "#/components/schemas/RSEntityBean"
+          },
+          "last": {
+            "$ref": "#/components/schemas/RSEntityBean"
+          }
+        },
+        "items": {
+          "$ref": "#/components/schemas/RSEntityBean"
+        }
+      },
+      "RSCredential": {
+        "type": "object",
+        "properties": {
+          "idProject": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "RSCriterion": {
+        "type": "object",
+        "properties": {
+          "fieldName": {
+            "type": "string"
+          },
+          "filter": {
+            "type": "string"
+          },
+          "value1": {
+            "type": "object"
+          },
+          "value2": {
+            "type": "object"
+          },
+          "value3": {
+            "type": "object"
+          },
+          "value4": {
+            "type": "object"
+          }
+        }
+      },
+      "RSCriterionList": {
+        "type": "array",
+        "properties": {
+          "empty": {
+            "type": "boolean"
+          },
+          "first": {
+            "$ref": "#/components/schemas/RSCriterion"
+          },
+          "last": {
+            "$ref": "#/components/schemas/RSCriterion"
+          }
+        },
+        "items": {
+          "$ref": "#/components/schemas/RSCriterion"
+        }
+      },
+      "RSQuery": {
+        "type": "object",
+        "properties": {
+          "logic": {
+            "type": "string"
+          },
+          "initResult": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxResults": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fieldList": {
+            "type": "array",
+            "properties": {
+              "hashMap": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSField"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSField"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSField"
+            }
+          },
+          "criterionList": {
+            "type": "array",
+            "properties": {
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSCriterion"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSCriterion"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSCriterion"
+            }
+          },
+          "orderList": {
+            "type": "array",
+            "properties": {
+              "hashMap": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "empty": {
+                "type": "boolean"
+              },
+              "first": {
+                "$ref": "#/components/schemas/RSField"
+              },
+              "last": {
+                "$ref": "#/components/schemas/RSField"
+              }
+            },
+            "items": {
+              "$ref": "#/components/schemas/RSField"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Authorization": {
+        "type": "apiKey",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  }
+}

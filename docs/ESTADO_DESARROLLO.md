@@ -36,12 +36,12 @@ integración ServiceTonic, por lo que no está lista para producción.
 |---|---|---|
 | Fase 0 — Seguridad | 🟡 85 % | Código completo; falta evidencia dev/prod, IAM efectivo y rotaciones reales |
 | Fase 1 — CI y pruebas | ✅ | CI, Docker, Sonar, Dependabot, 527 pruebas, cobertura >90 % |
-| I0 — Descubrimiento | 🟡 | OpenAPI ServiceTonic confirmado; faltan credenciales/catálogos, GCP y Entra ID |
+| I0 — Descubrimiento | 🟡 | ServiceTonic: agente técnico, `idProject=1`, campos y prioridades confirmados ([hallazgos](integraciones/SERVICETONIC_HALLAZGOS.md)); faltan estados, valores de desplegables, GCP y Entra ID |
 | I1 — Puertos | 🟡 | Protocolos/fábrica listos; quedan referencias `self.snow` y contrato legado |
 | I2 — Vertex AI | 🟡 | Proveedor y tokens listos; falta evaluación real con Gemini |
 | I3 — Cloud Run | 🟡 | Terraform/WIF/workflow listos; sin infraestructura aplicada |
 | I4 — Firestore/Logging | 🟡 | Código e IaC listos; falta validación multiinstancia y sinks reales |
-| I5 — ServiceTonic tickets | 🟡 | API viable; faltan `idProject`, agente técnico, campos y adaptador |
+| I5 — ServiceTonic tickets | 🟡 | Adaptador listo y probado con respuestas simuladas; lectura comprobada en Valtre. **Escritura bloqueada por el servidor** (302/401), caso abierto con el proveedor. Cuota: 1 000 llamadas/mes |
 | I6 — KB/Graph/autoservicio | 🔴 | No iniciado; depende de I5 y decisiones de integración |
 | I7 — Teams | 🟡 | Bot, tarjetas y callbacks listos; falta tenant y prueba real |
 | I8 — Producción | ⚪ | Hardening, carga, piloto, corte y limpieza pendientes |

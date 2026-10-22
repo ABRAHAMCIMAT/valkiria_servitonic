@@ -1,8 +1,9 @@
 # Requerimientos de ServiceTonic para la integración con el Help Desk Multiagente
 
-> **Estado 14/10/2026:** 🟡 OpenAPI v1 y servidor Valtre confirmados. Siguen
-> pendientes `idProject`, agente técnico, catálogos, campos obligatorios y
-> autorización de escritura. Ver
+> **Estado 23/10/2026:** 🟡 Recibidos `idProject` (1), agente técnico, nombres de
+> campos, prioridades y licencia ([hallazgos](SERVICETONIC_HALLAZGOS.md)). Pendientes:
+> estados completos, valores de los desplegables, campo para el ID de conversación y
+> que el proveedor desbloquee la creación de tickets por API. Ver
 > [contrato API revisado](SERVICETONIC_API.md) y
 > [estado consolidado](../ESTADO_DESARROLLO.md).
 
